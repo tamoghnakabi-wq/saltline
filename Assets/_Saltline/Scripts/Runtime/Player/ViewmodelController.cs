@@ -20,6 +20,7 @@ namespace Saltline.Player
         LocalPlayerController m_C;
         PlayerCameraRig m_Rig;
         Transform m_Gun;
+        Transform m_Sight;
         byte m_BuiltFor = 255;
         Vector3 m_Sway;
         Vector3 m_KickPos, m_KickRot;
@@ -102,7 +103,9 @@ namespace Saltline.Player
             m_KickPos = Vector3.Lerp(m_KickPos, Vector3.zero, 1f - Mathf.Exp(-16f * dt));
             m_KickRot = Vector3.Lerp(m_KickRot, Vector3.zero, 1f - Mathf.Exp(-14f * dt));
 
-            Vector3 basePos = Vector3.Lerp(w.viewmodelOffset, w.adsViewmodelOffset, ads);
+            // Aiming lines the gun's sight point up with the eye, at the weapon's eye relief.
+            Vector3 adsPos = m_Sight != null ? new Vector3(0f, 0f, w.adsEyeRelief) - m_Sight.localPosition : w.adsViewmodelOffset;
+            Vector3 basePos = Vector3.Lerp(w.viewmodelOffset, adsPos, ads);
             Vector3 sprintPos = new Vector3(-0.06f, -0.05f, -0.04f) * m_SprintBlend;
             Vector3 sprintRot = new Vector3(8f, -28f, 12f) * m_SprintBlend;
             m_Gun.localPosition = basePos + bob + sprintPos + m_KickPos + Vector3.down * lower;
@@ -113,7 +116,7 @@ namespace Saltline.Player
         void Rebuild(WeaponDefinition w)
         {
             if (m_Gun != null) Destroy(m_Gun.gameObject);
-            m_Gun = GreyboxGun.Build(w.weaponClass, transform, Layers.Viewmodel, out var muzzle);
+            m_Gun = GreyboxGun.Build(w.weaponClass, transform, Layers.Viewmodel, out var muzzle, out m_Sight);
             Muzzle = muzzle;
             m_BuiltFor = w.id;
         }

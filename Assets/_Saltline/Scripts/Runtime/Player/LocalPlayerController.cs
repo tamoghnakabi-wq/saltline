@@ -16,6 +16,9 @@ namespace Saltline.Player
     {
         public static bool InputBlocked; // set by menus / chat
 
+        /// <summary>Camera follows the simulated aim instead of the mouse (bots, capture, spectating).</summary>
+        public bool FollowSimAim;
+
         public NetPlayer Player { get; private set; }
         public PlayerCameraRig Rig { get; private set; }
         public float ViewYaw;
@@ -38,7 +41,8 @@ namespace Saltline.Player
             c.ViewPitch = p.SimAimPitch;
             p.InputProvider = c;
             p.ThirdPerson = GameSettings.StartInThirdPerson;
-            if (!Application.isBatchMode) c.Rig = PlayerCameraRig.Create(p, c);
+            if (Saltline.Core.RunMode.Presentation) c.Rig = PlayerCameraRig.Create(p, c);
+            p.LocalRig = c.Rig;
             return c;
         }
 
@@ -54,6 +58,12 @@ namespace Saltline.Player
         void Update()
         {
             if (Player == null) return;
+            if (FollowSimAim)
+            {
+                ViewYaw = Player.SimAimYaw;
+                ViewPitch = Player.SimAimPitch;
+                return;
+            }
             var gi = GameInput.Instance;
             bool active = Active;
             Cursor.lockState = active ? CursorLockMode.Locked : CursorLockMode.None;

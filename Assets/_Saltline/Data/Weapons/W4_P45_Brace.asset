@@ -73,5 +73,6 @@ MonoBehaviour:
   muzzleFlashScale: 1
   fireSoundId: pistol
   soundRange: 120
-  viewmodelOffset: {x: 0.16, y: -0.15, z: 0.32}
+  viewmodelOffset: {x: 0.16, y: -0.16, z: 0.36}
   adsViewmodelOffset: {x: 0, y: -0.05, z: 0.24}
+  adsEyeRelief: 0.26

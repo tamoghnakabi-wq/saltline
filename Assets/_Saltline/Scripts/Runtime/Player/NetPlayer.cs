@@ -58,6 +58,8 @@ namespace Saltline.Player
         public RenderPose Render { get; private set; }
         public Vector3 RenderEye => Render.Feet + Vector3.up * EyeHeightFor(Render.Height);
         public bool IsLocalHuman => IsOwner && InputProvider is LocalPlayerController;
+        /// <summary>The camera rig viewing through this player on this machine, if any.</summary>
+        public PlayerCameraRig LocalRig { get; internal set; }
         public WeaponDefinition ActiveWeapon => Weapons != null ? Weapons.Get((IsOwner || IsServer) ? m_Weapon.ActiveId : Render.WeaponId) : null;
         public string DisplayName => GameSession.Instance != null && GameSession.Instance.TryGet(OwnerClientId, out var r) ? r.Name.ToString() : $"Player {OwnerClientId}";
 

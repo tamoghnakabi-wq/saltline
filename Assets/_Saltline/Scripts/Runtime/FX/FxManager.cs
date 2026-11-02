@@ -27,7 +27,7 @@ namespace Saltline.FX
 
         public static void Ensure()
         {
-            if (Instance != null || Application.isBatchMode) return;
+            if (Instance != null || !Saltline.Core.RunMode.Presentation) return;
             var go = new GameObject("FxManager");
             DontDestroyOnLoad(go);
             Instance = go.AddComponent<FxManager>();
@@ -97,7 +97,7 @@ namespace Saltline.FX
             Vector3 aim = Quaternion.Euler(-fx.Pitch * InputCmd.PitchScale, fx.Yaw * InputCmd.YawScale, 0f) * Vector3.forward;
             Vector3 muzzle = fx.Origin + aim * 0.6f + Vector3.down * 0.12f;
             var vm = ViewmodelController.Current;
-            var rig = shooter != null && shooter.IsLocalHuman ? (shooter.InputProvider as LocalPlayerController)?.Rig : null;
+            var rig = shooter != null && shooter.IsOwner ? shooter.LocalRig : null;
             if (local && rig != null && !rig.ThirdPersonActive && vm != null && vm.Muzzle != null) muzzle = vm.Muzzle.position;
             else if (shooter != null)
             {

@@ -96,7 +96,9 @@ namespace Saltline.Weapons
         public string fireSoundId = "rifle";
         public float soundRange = 120f;
         public Vector3 viewmodelOffset = new Vector3(0.18f, -0.17f, 0.34f);
-        public Vector3 adsViewmodelOffset = new Vector3(0f, -0.105f, 0.22f);
+        public Vector3 adsViewmodelOffset = new Vector3(0f, -0.105f, 0.22f); // fallback for models without a sight point
+        [Tooltip("Distance from the eye to the rear sight when aiming down sights (m).")]
+        public float adsEyeRelief = 0.14f;
 
         public float FireInterval => 60f / Mathf.Max(1f, roundsPerMinute);
 

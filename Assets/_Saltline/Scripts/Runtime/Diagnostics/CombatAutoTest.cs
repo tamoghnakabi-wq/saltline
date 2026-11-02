@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Saltline.Combat;
 using Saltline.Core;
+using Saltline.FX;
 using Saltline.Net;
 using Saltline.Player;
 using Saltline.Sim;
@@ -82,6 +83,15 @@ namespace Saltline.Diagnostics
             var enemy = NetPlayer.All.First(p => p != me);
             Note($"host: players spawned. host team={me.TeamState.Value} at {me.SimMotor.Position}, client team={enemy.TeamState.Value} at {enemy.SimMotor.Position}");
 
+            if (CommandLine.Has("capture"))
+            {
+                // Visual check: real camera rig and effects, driven by the bot's aim.
+                var view = LocalPlayerController.Attach(me);
+                view.FollowSimAim = true;
+                FxManager.Ensure();
+                CaptureDirector.Install(me);
+            }
+
             var bot = new BotInputProvider();
             me.InputProvider = bot;
             bot.Brain = (p, intent) => HostBrain(p, intent, enemy);
@@ -108,6 +118,7 @@ namespace Saltline.Diagnostics
             Result["inputsDropped"] = enemy.ServerInputsDropped.ToString();
             Result["rewinds"] = lc.Rewinds.ToString();
             Result["clampedRewinds"] = lc.ClampedRewinds.ToString();
+            if (CommandLine.Has("capture")) Result["framesCaptured"] = CaptureDirector.Captured.ToString();
 
             if (!done) return Fail("client never finished its phases");
             bool expectMiss = CommandLine.GetFloat("lagcomp", 0.35f) <= 0.001f;

@@ -30,7 +30,7 @@ namespace Saltline.Player
         void Awake()
         {
             m_P = GetComponent<NetPlayer>();
-            if (Application.isBatchMode) { enabled = false; return; }
+            if (!Saltline.Core.RunMode.Presentation) { enabled = false; return; }
             m_Root = new GameObject("Body").transform;
             m_Root.SetParent(transform, false);
             for (int i = 0; i < HitboxModel.Count; i++)
@@ -56,7 +56,7 @@ namespace Saltline.Player
             m_Root.gameObject.SetActive(alive);
             if (!alive) return;
 
-            var rig = m_P.IsLocalHuman ? (m_P.InputProvider as LocalPlayerController)?.Rig : null;
+            var rig = m_P.IsOwner ? m_P.LocalRig : null;
             bool hide = rig != null && !rig.ThirdPersonActive;
             if (hide != m_FirstPersonHidden) SetShadowsOnly(hide);
 

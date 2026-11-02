@@ -105,5 +105,6 @@ MonoBehaviour:
   muzzleFlashScale: 1
   fireSoundId: smg
   soundRange: 120
-  viewmodelOffset: {x: 0.17, y: -0.16, z: 0.32}
+  viewmodelOffset: {x: 0.18, y: -0.19, z: 0.38}
   adsViewmodelOffset: {x: 0, y: -0.06, z: 0.2}
+  adsEyeRelief: 0.17

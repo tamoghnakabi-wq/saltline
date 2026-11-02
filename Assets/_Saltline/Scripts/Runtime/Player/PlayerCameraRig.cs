@@ -151,7 +151,7 @@ namespace Saltline.Player
             // ---- Third person with collision
             Quaternion tpRot = Quaternion.Euler(-m_Ctl.ViewPitch, m_Ctl.ViewYaw, 0f) * shake;
             Vector3 pivot = eye + Vector3.up * 0.08f;
-            Vector3 offset = new Vector3(0.58f * m_Shoulder, 0.12f, -Mathf.Lerp(2.6f, 1.45f, ads));
+            Vector3 offset = new Vector3(Mathf.Lerp(0.7f, 0.62f, ads) * m_Shoulder, 0.1f, -Mathf.Lerp(2.5f, 1.4f, ads));
             Vector3 desired = pivot + tpRot * offset;
             Vector3 dir = desired - pivot;
             float dist = dir.magnitude;
