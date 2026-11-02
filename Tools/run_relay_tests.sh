@@ -13,9 +13,12 @@ APP="${2:-$PWD/Builds/macOS/SALTLINE.app/Contents/MacOS/SALTLINE}"
 WHICH="${1:-all}"
 OVERALL=0
 
-player() { # run a headless player; stdout is noise, the log file is what matters
+player() { # run a headless player in the foreground; the log file is what matters
   "$APP" -batchmode -nographics "$@" >/dev/null 2>&1
 }
+# Background launches use `( exec ... ) &` so that $! is the game process itself,
+# which the host-loss test needs to kill it without a clean shutdown.
+bgplayer() { ( exec "$APP" -batchmode -nographics "$@" >/dev/null 2>&1 ) & }
 
 summary() { # dir
   for f in "$1"/*.log; do
@@ -63,14 +66,24 @@ test_capacity() {
 
 test_hostloss() {
   local R="$PWD/AutoTest/hostloss_$(date +%H%M%S)"; mkdir -p "$R"
-  player -autotest host -profile t_host -codefile "$R/code.txt" -clients 1 -idleafter 120 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+  bgplayer -autotest host -profile t_hostloss -codefile "$R/code.txt" -clients 1 -idleafter 120 -testout "$R/host.json" -logFile "$R/host.log"; local H=$!
   player -autotest client -profile t_c1 -codefile "$R/code.txt" -waitforhostloss 30 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
   # wait for the client's PASS verdict, then kill the host without a clean shutdown
   for _ in $(seq 1 120); do grep -q "host verdict = PASS" "$R/c1.log" 2>/dev/null && break; sleep 1; done
-  sleep 2; kill -9 $H 2>/dev/null; echo "  killed host pid $H at $(date +%T)"
+  # kill the game process itself (not the wrapper shell) with no clean shutdown
+  sleep 2; kill -9 "$H" 2>/dev/null; echo "  killed host game process $H at $(date +%T)"
   wait $C
   summary "$R"
   [ "$(result_of "$R/c1.json")" = "PASS" ] && record hostloss PASS || record hostloss FAIL
+}
+
+test_hostquit() { # host exits normally right after validating; the client must be told
+  local R="$PWD/AutoTest/hostquit_$(date +%H%M%S)"; mkdir -p "$R"
+  bgplayer -autotest host -profile t_hostquit -codefile "$R/code.txt" -clients 1 -testout "$R/host.json" -logFile "$R/host.log"; local H=$!
+  player -autotest client -profile t_c1 -codefile "$R/code.txt" -waitforhostloss 30 -testout "$R/c1.json" -logFile "$R/c1.log"
+  wait $H
+  summary "$R"
+  [ "$(result_of "$R/c1.json")" = "PASS" ] && record hostquit PASS || record hostquit FAIL
 }
 
 test_latency() { # 150ms delay, 30ms jitter, 3% loss injected on the client
@@ -86,8 +99,9 @@ case "$WHICH" in
   pair) test_pair ;;
   capacity) test_capacity ;;
   hostloss) test_hostloss ;;
+  hostquit) test_hostquit ;;
   latency) test_latency ;;
-  all) test_pair; test_capacity; test_hostloss; test_latency ;;
+  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency ;;
   *) echo "unknown test: $WHICH"; exit 2 ;;
 esac
 exit $OVERALL
