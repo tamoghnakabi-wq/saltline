@@ -51,6 +51,8 @@ namespace Saltline.EditorTools
         {
             bool dev = Environment.GetCommandLineArgs().Contains("-devbuild");
             if (target == BuildTarget.StandaloneOSX) SetMacArchitecture("ARM64");
+            // Development builds (profiler, network simulator) go next to, never over, release builds.
+            if (dev) path = path.Replace("Builds/macOS/", "Builds/macOS-dev/").Replace("Builds/Windows/", "Builds/Windows-dev/");
 
             BootSceneFactory.EnsureBuildScenes();
             string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();

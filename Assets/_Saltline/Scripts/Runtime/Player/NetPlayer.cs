@@ -109,6 +109,8 @@ namespace Saltline.Player
         float m_LastDamageTime = -100f;
         float m_RegenAccum;
         float m_ProtectUntil;
+        // Host match rules (custom-match overrides: -respawndelay, -spawnprotect).
+        float m_RespawnDelay, m_SpawnProtection;
         bool m_PendingRespawn;
         readonly List<(ulong attacker, int damage, float time)> m_Contributions = new();
 
@@ -156,6 +158,8 @@ namespace Saltline.Player
             {
                 EnsureServerLoop(NetworkManager);
                 LagCompensation.Server.MaxRewindSeconds = CommandLine.GetFloat("lagcomp", config.maxRewindSeconds);
+                m_RespawnDelay = Mathf.Max(0.5f, CommandLine.GetFloat("respawndelay", config.respawnDelay));
+                m_SpawnProtection = Mathf.Max(0f, CommandLine.GetFloat("spawnprotect", config.spawnProtection));
             }
             UpdateRender();
             if (IsOwner)
@@ -636,7 +640,7 @@ namespace Saltline.Player
             Health.Value = 0;
             Protected.Value = false;
             m_PendingRespawn = true;
-            RespawnAt.Value = now + config.respawnDelay;
+            RespawnAt.Value = now + m_RespawnDelay;
 
             ulong assister = ulong.MaxValue;
             int bestAssist = config.assistMinDamage - 1;
@@ -726,8 +730,8 @@ namespace Saltline.Player
             m_LastDamageTime = -100f;
             Health.Value = (byte)config.maxHealth;
             AliveState.Value = true;
-            m_ProtectUntil = ServerNow + config.spawnProtection;
-            Protected.Value = config.spawnProtection > 0f;
+            m_ProtectUntil = ServerNow + m_SpawnProtection;
+            Protected.Value = m_SpawnProtection > 0f;
             if (m_Cc.enabled)
             {
                 m_Cc.enabled = false;

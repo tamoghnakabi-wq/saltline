@@ -39,7 +39,36 @@ namespace Saltline.Diagnostics
                 Note($"EXCEPTION: {SessionService.Describe(e)} :: {e}");
                 ok = false;
             }
+            // A latency test that silently ran without latency would be a false pass.
+            Result["netsim"] = NetSimBridge.ActiveDescription;
+            if (CommandLine.Has("netsim") && NetSimBridge.ActiveDescription == "off")
+                ok = Fail("-netsim was requested but the network simulator is not active (development build required)");
             await Finish(ok);
+        }
+
+        /// <summary>Round-trip time series over unreliable RPCs (client side).</summary>
+        protected async Task<(float avg, float min, float max, int received)> MeasureRtt(int pings, float interval)
+        {
+            var sent = new Dictionary<uint, double>();
+            var rtts = new List<double>();
+            void OnPong(uint seq, double t0)
+            {
+                if (sent.Remove(seq)) rtts.Add((Time.realtimeSinceStartupAsDouble - t0) * 1000.0);
+            }
+            Saltline.Net.NetDiagnostics.Instance.Pong += OnPong;
+            for (uint i = 1; i <= pings; i++)
+            {
+                double now = Time.realtimeSinceStartupAsDouble;
+                sent[i + 100000u] = now;
+                Saltline.Net.NetDiagnostics.Instance.PingRpc(i + 100000u, now);
+                await WaitSeconds(interval);
+            }
+            await WaitSeconds(1.0f);
+            if (Saltline.Net.NetDiagnostics.Instance != null) Saltline.Net.NetDiagnostics.Instance.Pong -= OnPong;
+            if (rtts.Count == 0) return (-1f, -1f, -1f, 0);
+            double sum = 0, mn = double.MaxValue, mx = 0;
+            foreach (double r in rtts) { sum += r; mn = Math.Min(mn, r); mx = Math.Max(mx, r); }
+            return ((float)(sum / rtts.Count), (float)mn, (float)mx, rtts.Count);
         }
 
         protected bool Fail(string why)

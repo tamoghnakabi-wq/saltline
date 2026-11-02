@@ -9,6 +9,8 @@
 set -u
 cd "$(dirname "$0")/.."
 APP="${2:-$PWD/Builds/macOS/SALTLINE.app/Contents/MacOS/SALTLINE}"
+# Latency-simulation tests need a development build (the simulator is stripped from release builds).
+DEVAPP="${DEVAPP:-$PWD/Builds/macOS-dev/SALTLINE.app/Contents/MacOS/SALTLINE}"
 [ -x "$APP" ] || { echo "player binary not found: $APP"; exit 2; }
 WHICH="${1:-all}"
 OVERALL=0
@@ -16,6 +18,7 @@ OVERALL=0
 player() { # run a headless player in the foreground; the log file is what matters
   "$APP" -batchmode -nographics "$@" >/dev/null 2>&1
 }
+needdev() { [ -x "$DEVAPP" ] || { echo "development build not found: $DEVAPP (build with -devbuild)"; record "$1" FAIL; return 1; }; APP="$DEVAPP"; }
 # Background launches use `( exec ... ) &` so that $! is the game process itself,
 # which the host-loss test needs to kill it without a clean shutdown.
 bgplayer() { ( exec "$APP" -batchmode -nographics "$@" >/dev/null 2>&1 ) & }
@@ -87,31 +90,37 @@ test_hostquit() { # host exits normally right after validating; the client must 
 }
 
 test_latency() { # 150ms delay, 30ms jitter, 3% loss injected on the client
-  local R="$PWD/AutoTest/latency_$(date +%H%M%S)"; mkdir -p "$R"
+  local SAVED="$APP"; needdev latency || return; local R="$PWD/AutoTest/latency_$(date +%H%M%S)"; mkdir -p "$R"
   player -autotest host -profile t_host -codefile "$R/code.txt" -clients 1 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
   player -autotest client -profile t_c1 -netsim 150,30,3 -codefile "$R/code.txt" -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
   wait $C; wait $H
   summary "$R"
   [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record latency PASS || record latency FAIL
+  APP="$SAVED"
 }
 
 run_combat() { # name "host args" "client args"
   local R="$PWD/AutoTest/$1_$(date +%H%M%S)"; mkdir -p "$R"
   # shellcheck disable=SC2086
-  player -autotest combat-host -profile t_host -codefile "$R/code.txt" -testtimeout 200 $2 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+  # Shorter respawn (2 s) + spawn protection (1 s) than the 5 s / 2 s defaults so each phase
+  # collects enough shots; hit registration itself is unaffected by these rules.
+  player -autotest combat-host -profile t_host -codefile "$R/code.txt" -testtimeout 240 -respawndelay 2 -spawnprotect 1 $2 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
   # shellcheck disable=SC2086
-  player -autotest combat-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 200 $3 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  player -autotest combat-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 240 $3 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
   wait $C; wait $H
   summary "$R"
   [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record "$1" PASS || record "$1" FAIL
 }
 # Movement prediction + authoritative hits over Relay (bots on both sides).
 test_combat() { run_combat combat "" ""; }
-# Same with 120 ms delay, 20 ms jitter, 1% loss injected on the client: lag compensation must keep hits registering.
-test_combatlag() { run_combat combatlag "" "-netsim 120,20,1"; }
+# Same with +50 ms each way, 10 ms jitter, 1% loss on the client (about 170 ms round trip over Relay):
+# a poor but common connection. Lag compensation must keep hits registering. The rewind needed is
+# roughly round trip + interpolation, which stays inside the host's 350 ms rewind cap.
+LAGSIM="${LAGSIM:-50,10,1}"
+test_combatlag() { local SAVED="$APP"; needdev combatlag || return; run_combat combatlag "" "-netsim $LAGSIM"; APP="$SAVED"; }
 # Control: lag compensation disabled on the host, same latency. The client must now mostly MISS,
 # which shows the lag-compensated runs are not passing by accident.
-test_combatnolag() { run_combat combatnolag "-lagcomp 0" "-netsim 120,20,1 -expectmiss"; }
+test_combatnolag() { local SAVED="$APP"; needdev combatnolag || return; run_combat combatnolag "-lagcomp 0" "-netsim $LAGSIM -expectmiss"; APP="$SAVED"; }
 
 case "$WHICH" in
   pair) test_pair ;;

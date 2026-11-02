@@ -17,7 +17,7 @@ namespace Saltline.Diagnostics
     /// <summary>
     /// Headless end-to-end combat test over real Unity Relay, with scripted bots:
     ///
-    ///   Host:   -autotest combat-host   -codefile f [-lagcomp seconds] [-testout f]
+    ///   Host:   -autotest combat-host   -codefile f [-lagcomp seconds] [-respawndelay s] [-testout f]
     ///   Client: -autotest combat-client -codefile f [-expectmiss] [-netsim d,j,l] [-testout f]
     ///
     /// 1. Movement: the client runs a scripted path (sprint, strafe, jump, slide, crouch). Its
@@ -185,7 +185,7 @@ namespace Saltline.Diagnostics
 
             // ---- Phase 2: sniper vs strafing host
             await Announce(PhaseSniper, 0);
-            var (sShots, sHits, sKills) = await ShootPhase(me, enemy, bot, 24f, false);
+            var (sShots, sHits, sKills) = await ShootPhase(me, enemy, bot, 32f, false);
             float sRate = sShots > 0 ? sHits / (float)sShots : 0f;
             Note($"client: sniper shots {sShots}, confirmed {sHits} ({sRate:P0}), kills {sKills}");
             Result["sniperShots"] = sShots.ToString();
@@ -197,7 +197,7 @@ namespace Saltline.Diagnostics
             bot.Brain = (p, i) => new PlayerIntent { AimYaw = i.AimYaw, Buttons = InputButtons.SelectSecondary };
             if (!await WaitUntil(() => me.SimWeapon.Active == WeaponSlot.Secondary && me.SimWeapon.Action == WeaponAction.Ready, 4))
                 return Fail("weapon switch to sidearm did not complete");
-            var (pShots, pHits, pKills) = await ShootPhase(me, enemy, bot, 12f, true);
+            var (pShots, pHits, pKills) = await ShootPhase(me, enemy, bot, 20f, true);
             float pRate = pShots > 0 ? pHits / (float)pShots : 0f;
             Note($"client: pistol shots {pShots}, confirmed {pHits} ({pRate:P0}), kills {pKills}");
             Result["pistolShots"] = pShots.ToString();
@@ -216,15 +216,18 @@ namespace Saltline.Diagnostics
             Note($"client: died/respawned {bot.Respawns - respawnsBefore} time(s) during host fire phase; health now {me.Health.Value}");
             Result["timesKilledByHost"] = (bot.Respawns - respawnsBefore).ToString();
 
+            bot.Brain = (p, i) => new PlayerIntent { AimYaw = i.AimYaw };
+            var rtt = await MeasureRtt(20, 0.1f);
+            Note($"client: rtt avg {rtt.avg:F1} ms (min {rtt.min:F1}, max {rtt.max:F1}, {rtt.received}/20 pongs)");
+            Result["rttAvgMs"] = rtt.avg.ToString("F1");
+            Result["rttMaxMs"] = rtt.max.ToString("F1");
+
             await Announce(PhaseDone, 0);
             await WaitSeconds(1.5f);
 
             Result["reconciliationsTotal"] = me.Reconciliations.ToString();
             Result["interpTicks"] = NetClock.InterpolationTicks.ToString("F1");
             Result["extrapolatedFrames"] = NetClock.ExtrapolatedFrames.ToString();
-            var nm = NetworkManager.Singleton;
-            if (nm.NetworkConfig.NetworkTransport is Unity.Netcode.Transports.UTP.UnityTransport utp)
-                Result["rttMs"] = utp.GetCurrentRtt(NetworkManager.ServerClientId).ToString();
 
             bool expectMiss = CommandLine.Has("expectmiss");
             bool ok = true;
