@@ -18,7 +18,7 @@ namespace Saltline.Sim
             public static StepParams Default => new StepParams { WeaponMoveMultiplier = 1f, AimMoveMultiplier = 1f, CanSprint = true };
         }
 
-        public static int EnvironmentMask = Layers.EnvironmentMask;
+        public static int EnvironmentMask = Layers.MovementMask;
 
         public static void Step(ref MotorState s, in InputCmd cmd, float dt, CharacterController cc,
             MotorSettings m, in StepParams p)

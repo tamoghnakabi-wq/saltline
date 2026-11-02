@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real Unity Relay multiplayer tests using headless player builds (no editor).
 #
-#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|match|matchdraw|ui|net|gameplay|all] [binary]
+#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|match|kappamatch|matchdraw|ui|net|gameplay|all] [binary]
 #
 # Each test starts separate game processes, each signed in as its own anonymous Unity
 # player (-profile), and communicating only through Unity Relay. Results land in
@@ -125,13 +125,14 @@ test_combatnolag() { local SAVED="$APP"; needdev combatnolag || return; run_comb
 # Team Deathmatch flow: lobby rules, warmup, live, score limit, results, back to the lobby.
 # Short custom rules so a full match fits in about a minute. Kills are applied on the host via
 # the normal damage path (aim and hit registration are what the combat tests cover).
-test_match() {
-  local R="$PWD/AutoTest/match_$(date +%H%M%S)"; mkdir -p "$R"
-  player -autotest match-host -profile t_host -codefile "$R/code.txt" -testtimeout 200 -warmup 5 -scorelimit 3 -timelimit 120 -resultstime 5 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+test_match() { # [map] [name]
+  local MAP="${1:-arena}" NAME="${2:-match}"
+  local R="$PWD/AutoTest/${NAME}_$(date +%H%M%S)"; mkdir -p "$R"
+  player -autotest match-host -map "$MAP" -profile t_host -codefile "$R/code.txt" -testtimeout 200 -warmup 5 -scorelimit 3 -timelimit 120 -resultstime 5 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
   player -autotest match-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 200 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
   wait $C; wait $H
   summary "$R"
-  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record match PASS || record match FAIL
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record "$NAME" PASS || record "$NAME" FAIL
 }
 
 # Public match, time-limit draw, plus a third player who finds the match by browsing and joins
@@ -167,11 +168,12 @@ case "$WHICH" in
   combatlag) test_combatlag ;;
   combatnolag) test_combatnolag ;;
   match) test_match ;;
+  kappamatch) test_match kappa kappamatch ;;
   matchdraw) test_matchdraw ;;
   ui) test_ui ;;
   net) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency ;;
-  gameplay) test_combat; test_combatlag; test_combatnolag; test_match; test_matchdraw ;;
-  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency; test_combat; test_combatlag; test_combatnolag; test_match; test_matchdraw ;;
+  gameplay) test_combat; test_combatlag; test_combatnolag; test_match; test_match kappa kappamatch; test_matchdraw ;;
+  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency; test_combat; test_combatlag; test_combatnolag; test_match; test_match kappa kappamatch; test_matchdraw ;;
   *) echo "unknown test: $WHICH"; exit 2 ;;
 esac
 exit $OVERALL

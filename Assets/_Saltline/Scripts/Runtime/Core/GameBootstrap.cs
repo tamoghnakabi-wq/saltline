@@ -64,6 +64,8 @@ namespace Saltline.Core
                 Saltline.Settings.VideoSettings.ApplyAll();
                 AudioListener.volume = Saltline.Settings.GameSettings.MasterVolume;
             }
+            // -maptour renders a map's review viewpoints offline and quits (no menu, no network).
+            if (CommandLine.Has("maptour")) { gameObject.AddComponent<MapTour>(); return; }
             // The menu UI exists whenever something is rendered (and not under a headless test).
             if (RunMode.Presentation && !CommandLine.Has("autotest")) UiRoot.Ensure();
 

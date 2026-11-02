@@ -13,13 +13,17 @@ namespace Saltline
         public const int LocalBody = 10;  // the local player's own body (hidden in first person)
         public const int Debris = 11;     // shell casings, gibs: never block anything
         public const int Trigger = 12;
+        public const int PlayerClip = 13; // invisible walls that stop players but not bullets or cameras
 
+        /// <summary>What bullets, line-of-sight checks and cameras collide with.</summary>
         public const int EnvironmentMask = (1 << Default) | (1 << Environment);
+        /// <summary>What player movement collides with: the environment plus player clips.</summary>
+        public const int MovementMask = EnvironmentMask | (1 << PlayerClip);
 
         public static readonly (int index, string name)[] Named =
         {
             (Environment, "Environment"), (Player, "Player"), (Hitbox, "Hitbox"), (Viewmodel, "Viewmodel"),
-            (LocalBody, "LocalBody"), (Debris, "Debris"), (Trigger, "Trigger"),
+            (LocalBody, "LocalBody"), (Debris, "Debris"), (Trigger, "Trigger"), (PlayerClip, "PlayerClip"),
         };
 
         static bool s_configured;
@@ -31,7 +35,8 @@ namespace Saltline
             s_configured = true;
             int[] nonBlocking = { Player, Hitbox, Viewmodel, LocalBody, Debris, Trigger };
             foreach (int other in nonBlocking) Physics.IgnoreLayerCollision(Player, other, true);
-            foreach (int other in new[] { Hitbox, Viewmodel, LocalBody, Trigger }) Physics.IgnoreLayerCollision(Debris, other, true);
+            foreach (int other in new[] { Hitbox, Viewmodel, LocalBody, Trigger, PlayerClip }) Physics.IgnoreLayerCollision(Debris, other, true);
+            Physics.IgnoreLayerCollision(Viewmodel, PlayerClip, true);
             Physics.IgnoreLayerCollision(Viewmodel, Default, true);
             Physics.IgnoreLayerCollision(Viewmodel, Environment, true);
         }

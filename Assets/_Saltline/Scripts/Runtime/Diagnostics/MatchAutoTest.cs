@@ -43,6 +43,7 @@ namespace Saltline.Diagnostics
         protected override Task<bool> Run() => Role.Contains("host") ? RunHost() : Role.Contains("late") ? RunLate() : RunClient();
 
         bool Draw => CommandLine.Get("scenario", "") == "draw";
+        static string MapArg => CommandLine.Get("map", "arena");
 
         static PlayerRecord Rec(ulong id)
         {
@@ -57,6 +58,29 @@ namespace Saltline.Diagnostics
             return ulong.MaxValue;
         }
 
+        /// <summary>Every player must be standing on a spawn point of its own team (maps with team spawns).</summary>
+        bool CheckSpawnedAtOwnSpawns(string when)
+        {
+            foreach (var p in NetPlayer.All)
+                if (!CheckAtOwnSpawn(p, when)) return false;
+            return true;
+        }
+
+        int m_SpawnChecks;
+
+        bool CheckAtOwnSpawn(NetPlayer p, string when)
+        {
+            var spawns = FindObjectsByType<SpawnPoint>(FindObjectsSortMode.None);
+            if (!spawns.Any(sp => sp.team != Team.None)) return true;
+            var pos = p.SimMotor.Position;
+            var team = p.TeamState.Value;
+            float best = spawns.Where(sp => sp.team == team).Select(sp => Vector3.Distance(sp.transform.position, pos)).DefaultIfEmpty(999f).Min();
+            Note($"host: {when}: {team} player {p.OwnerClientId} at {pos}, {best:F2} m from nearest {team} spawn");
+            if (best > 1.0f) return Fail($"{team} player {p.OwnerClientId} spawned {best:F1} m from any {team} spawn point ({when})");
+            Result["spawnChecks"] = (++m_SpawnChecks).ToString();
+            return true;
+        }
+
         // ================================================================== host
 
         async Task<bool> RunHost()
@@ -68,7 +92,7 @@ namespace Saltline.Diagnostics
                 PlayerName = "MatchHost",
                 SessionName = $"match-{DateTime.UtcNow:HHmmss}-{UnityEngine.Random.Range(100, 999)}",
                 IsPrivate = !Draw,
-                MapId = "arena",
+                MapId = MapArg,
             });
             var nm = NetworkManager.Singleton;
             if (!await WaitUntil(() => nm.IsHost && GameSession.Instance != null && MatchDirector.Instance != null && NetDiagnostics.Instance != null, 30))
@@ -79,7 +103,8 @@ namespace Saltline.Diagnostics
             if (proto != "RelayUnityTransport") return Fail($"expected Relay transport, got {proto}");
 
             var md = MatchDirector.Instance;
-            md.ServerSetMap("arena");
+            md.ServerSetMap(MapArg);
+            Result["map"] = MapArg;
             var rules = md.Rules.Value;
             Result["rules"] = $"{rules.TimeLimit:F0}s/{rules.ScoreLimit} kills/warmup {rules.Warmup:F0}s/results {rules.Results:F0}s";
             NetDiagnostics.Instance.ClientPhase += (id, phase, value) => { if (phase == ClientDone) m_ClientDone = true; };
@@ -109,8 +134,11 @@ namespace Saltline.Diagnostics
             if (!await WaitUntil(() => md.Phase.Value == MatchPhase.Warmup && NetPlayer.All.Count >= 2 && NetPlayer.All.All(p => p.AliveState.Value), 60))
                 return Fail($"warmup did not begin with both players spawned (phase {md.Phase.Value}, players {NetPlayer.All.Count})");
             Result["matchScene"] = SceneManager.GetActiveScene().name;
+            if (MapCatalog.TryGet(MapArg, out var mapInfo) && SceneManager.GetActiveScene().name != mapInfo.Scene)
+                return Fail($"loaded {SceneManager.GetActiveScene().name}, expected {mapInfo.Scene}");
             var me = NetPlayer.Local;
             var them = NetPlayer.All.First(p => p != me);
+            if (!CheckSpawnedAtOwnSpawns("warmup")) return false;
 
             // Warmup kills do not count.
             if (!await Kill(me, them)) return Fail("warmup kill failed");
@@ -217,6 +245,7 @@ namespace Saltline.Diagnostics
         async Task<bool> Kill(NetPlayer attacker, NetPlayer victim)
         {
             if (!await WaitUntil(() => victim.AliveState.Value && !victim.Protected.Value, 20)) return false;
+            if (!CheckAtOwnSpawn(victim, "before kill")) return false;
             victim.ServerApplyDamage(attacker, 500, 0, false, false, attacker.SimMotor.Position);
             return await WaitUntil(() => !victim.AliveState.Value, 2);
         }
