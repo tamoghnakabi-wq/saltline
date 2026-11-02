@@ -61,6 +61,9 @@ namespace Saltline.EditorTools
             var boot = bootGo.AddComponent<GameBootstrap>();
             var so = new SerializedObject(boot);
             so.FindProperty("sessionPrefab").objectReferenceValue = sessionPrefab.GetComponent<NetworkObject>();
+            var player = AssetDatabase.LoadAssetAtPath<GameObject>(ContentFactory.PlayerPrefabPath);
+            if (player != null) so.FindProperty("playerPrefab").objectReferenceValue = player.GetComponent<NetworkObject>();
+            else Debug.LogWarning("[SALTLINE] Player prefab missing; run ContentFactory first.");
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, BootScenePath);
@@ -110,7 +113,7 @@ namespace Saltline.EditorTools
         public static void EnsureBuildScenes()
         {
             var wanted = new List<string> { BootScenePath };
-            foreach (string name in new[] { "Menu", "Kappa" })
+            foreach (string name in new[] { "Menu", "Arena", "Kappa" })
             {
                 string p = $"{ScenesDir}/{name}.unity";
                 if (File.Exists(p)) wanted.Add(p);

@@ -15,6 +15,8 @@ namespace Saltline.Net
         public event Action<uint, double> Pong;
         public event Action<ulong, TestReport> ReportReceived;
         public event Action<bool, string> AckReceived;
+        /// <summary>Test coordination: a client announced a phase (host side).</summary>
+        public event Action<ulong, int, float> ClientPhase;
 
         public struct TestReport : INetworkSerializeByMemcpy
         {
@@ -63,6 +65,12 @@ namespace Saltline.Net
         void AckRpc(bool ok, string message, RpcParams rpc)
         {
             AckReceived?.Invoke(ok, message);
+        }
+
+        [Rpc(SendTo.Server)]
+        public void ClientPhaseRpc(int phase, float value, RpcParams rpc = default)
+        {
+            ClientPhase?.Invoke(rpc.Receive.SenderClientId, phase, value);
         }
     }
 }

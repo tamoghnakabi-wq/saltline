@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51e79c1a9bbff4c059d46657c509def6, type: 3}
+  m_Name: W2_TS12_Breaker
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Weapons.WeaponDefinition
+  id: 2
+  displayName: TS-12 Breaker
+  shortName: BREAKER
+  description: Pump-action. One well-placed shot at close range ends a fight.
+  weaponClass: 2
+  slot: 0
+  fireMode: 2
+  damage: 14
+  pellets: 9
+  headMultiplier: 1.25
+  upperTorsoMultiplier: 1
+  lowerTorsoMultiplier: 0.95
+  limbMultiplier: 0.85
+  falloffStart: 6
+  falloffEnd: 18
+  minDamageFactor: 0.35
+  maxRange: 60
+  penetrationPower: 0.3
+  roundsPerMinute: 70
+  magazineSize: 6
+  reserveAmmo: 36
+  reloadMode: 1
+  reloadTime: 2.1
+  emptyReloadTime: 2.6
+  reloadCommitPoint: 0.8
+  shellInsertTime: 0.5
+  reloadStartTime: 0.35
+  equipTime: 0.5
+  holsterTime: 0.25
+  adsTime: 0.25
+  adsFov: 62
+  hasScope: 0
+  scopeFov: 22
+  moveSpeedMultiplier: 0.95
+  adsMoveMultiplier: 1
+  blockSprintWhileReloading: 0
+  hipSpread: 4.5
+  adsSpread: 3.2
+  moveSpread: 0.5
+  airSpread: 1
+  crouchSpreadMultiplier: 0.8
+  bloomPerShot: 0
+  maxBloom: 0
+  bloomRecovery: 6
+  recoilPattern:
+  - {x: 0.2, y: 3.5}
+  recoilRandomYaw: 0.6
+  recoilAdsMultiplier: 0.75
+  recoilRecoverySpeed: 7
+  recoilRecoveryFraction: 0.7
+  recoilResetTime: 0.22
+  viewKickBack: 0.09
+  viewKickUp: 7
+  viewKickRoll: 3
+  cameraShake: 0.6
+  tracerEvery: 1
+  tracerSpeed: 380
+  tracerColor: {r: 1, g: 0.82, b: 0.55, a: 1}
+  muzzleFlashScale: 1.5
+  fireSoundId: shotgun
+  soundRange: 120
+  viewmodelOffset: {x: 0.18, y: -0.17, z: 0.34}
+  adsViewmodelOffset: {x: 0, y: -0.07, z: 0.22}

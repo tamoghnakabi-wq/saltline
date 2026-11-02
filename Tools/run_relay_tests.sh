@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real Unity Relay multiplayer tests using headless player builds (no editor).
 #
-#   Tools/run_relay_tests.sh [pair|capacity|hostloss|latency|all] [path/to/player/binary]
+#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|net|all] [binary]
 #
 # Each test starts separate game processes, each signed in as its own anonymous Unity
 # player (-profile), and communicating only through Unity Relay. Results land in
@@ -95,13 +95,36 @@ test_latency() { # 150ms delay, 30ms jitter, 3% loss injected on the client
   [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record latency PASS || record latency FAIL
 }
 
+run_combat() { # name "host args" "client args"
+  local R="$PWD/AutoTest/$1_$(date +%H%M%S)"; mkdir -p "$R"
+  # shellcheck disable=SC2086
+  player -autotest combat-host -profile t_host -codefile "$R/code.txt" -testtimeout 200 $2 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+  # shellcheck disable=SC2086
+  player -autotest combat-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 200 $3 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  wait $C; wait $H
+  summary "$R"
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record "$1" PASS || record "$1" FAIL
+}
+# Movement prediction + authoritative hits over Relay (bots on both sides).
+test_combat() { run_combat combat "" ""; }
+# Same with 120 ms delay, 20 ms jitter, 1% loss injected on the client: lag compensation must keep hits registering.
+test_combatlag() { run_combat combatlag "" "-netsim 120,20,1"; }
+# Control: lag compensation disabled on the host, same latency. The client must now mostly MISS,
+# which shows the lag-compensated runs are not passing by accident.
+test_combatnolag() { run_combat combatnolag "-lagcomp 0" "-netsim 120,20,1 -expectmiss"; }
+
 case "$WHICH" in
   pair) test_pair ;;
   capacity) test_capacity ;;
   hostloss) test_hostloss ;;
   hostquit) test_hostquit ;;
   latency) test_latency ;;
-  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency ;;
+  combat) test_combat ;;
+  combatlag) test_combatlag ;;
+  combatnolag) test_combatnolag ;;
+  net) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency ;;
+  gameplay) test_combat; test_combatlag; test_combatnolag ;;
+  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency; test_combat; test_combatlag; test_combatnolag ;;
   *) echo "unknown test: $WHICH"; exit 2 ;;
 esac
 exit $OVERALL

@@ -1,0 +1,106 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51e79c1a9bbff4c059d46657c509def6, type: 3}
+  m_Name: W0_VK21_Halyard
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Weapons.WeaponDefinition
+  id: 0
+  displayName: VK-21 Halyard
+  shortName: HALYARD
+  description: Balanced automatic rifle. Four chest hits down a full-health target.
+  weaponClass: 0
+  slot: 0
+  fireMode: 0
+  damage: 26
+  pellets: 1
+  headMultiplier: 1.6
+  upperTorsoMultiplier: 1
+  lowerTorsoMultiplier: 0.95
+  limbMultiplier: 0.8
+  falloffStart: 30
+  falloffEnd: 55
+  minDamageFactor: 0.77
+  maxRange: 300
+  penetrationPower: 1
+  roundsPerMinute: 750
+  magazineSize: 30
+  reserveAmmo: 150
+  reloadMode: 0
+  reloadTime: 2.1
+  emptyReloadTime: 2.6
+  reloadCommitPoint: 0.8
+  shellInsertTime: 0.5
+  reloadStartTime: 0.35
+  equipTime: 0.45
+  holsterTime: 0.25
+  adsTime: 0.22
+  adsFov: 55
+  hasScope: 0
+  scopeFov: 22
+  moveSpeedMultiplier: 0.97
+  adsMoveMultiplier: 1
+  blockSprintWhileReloading: 0
+  hipSpread: 2
+  adsSpread: 0.12
+  moveSpread: 1.4
+  airSpread: 4
+  crouchSpreadMultiplier: 0.8
+  bloomPerShot: 0.12
+  maxBloom: 1.2
+  bloomRecovery: 5
+  recoilPattern:
+  - {x: 0.04, y: 0.55}
+  - {x: 0.0791469, y: 0.5857143}
+  - {x: 0.11049943, y: 0.6214286}
+  - {x: 0.1278151, y: 0.6571429}
+  - {x: 0.12764628, y: 0.69285715}
+  - {x: 0.11002659, y: 0.7285714}
+  - {x: 0.0784642, y: 0.76428574}
+  - {x: 0.03924336, y: 0.8}
+  - {x: 0.000173166, y: 0.8}
+  - {x: -0.030967264, y: 0.8}
+  - {x: -0.13797772, y: 0.8}
+  - {x: -0.13747129, y: 0.8}
+  - {x: -0.11954883, y: 0.8}
+  - {x: -0.08777877, y: 0.8}
+  - {x: -0.048486777, y: 0.8}
+  - {x: -0.009496033, y: 0.68}
+  - {x: 0.021430098, y: 0.68}
+  - {x: 0.038134098, y: 0.68}
+  - {x: 0.037290096, y: 0.68}
+  - {x: 0.019066095, y: 0.68}
+  - {x: -0.012909335, y: 0.68}
+  - {x: -0.052269727, y: 0.68}
+  - {x: -0.0911782, y: 0.68}
+  - {x: -0.12188787, y: 0.68}
+  - {x: -0.13828425, y: 0.68}
+  - {x: -0.13710272, y: 0.68}
+  - {x: -0.11857854, y: 0.68}
+  - {x: -0.08639998, y: 0.68}
+  - {x: -0.046973977, y: 0.68}
+  - {x: -0.008150476, y: 0.68}
+  recoilRandomYaw: 0.12
+  recoilAdsMultiplier: 0.75
+  recoilRecoverySpeed: 9
+  recoilRecoveryFraction: 0.65
+  recoilResetTime: 0.22
+  viewKickBack: 0.04
+  viewKickUp: 2.2
+  viewKickRoll: 1.4
+  cameraShake: 0.2
+  tracerEvery: 1
+  tracerSpeed: 380
+  tracerColor: {r: 1, g: 0.82, b: 0.55, a: 1}
+  muzzleFlashScale: 1
+  fireSoundId: ar
+  soundRange: 120
+  viewmodelOffset: {x: 0.18, y: -0.17, z: 0.34}
+  adsViewmodelOffset: {x: 0, y: -0.083, z: 0.2}

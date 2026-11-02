@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51e79c1a9bbff4c059d46657c509def6, type: 3}
+  m_Name: W3_LR338_Longreach
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Weapons.WeaponDefinition
+  id: 3
+  displayName: LR-338 Longreach
+  shortName: LONGREACH
+  description: Bolt-action. Headshots kill outright; perfectly accurate only when
+    scoped and still.
+  weaponClass: 3
+  slot: 0
+  fireMode: 3
+  damage: 95
+  pellets: 1
+  headMultiplier: 2.2
+  upperTorsoMultiplier: 1
+  lowerTorsoMultiplier: 0.95
+  limbMultiplier: 0.8
+  falloffStart: 80
+  falloffEnd: 200
+  minDamageFactor: 0.85
+  maxRange: 500
+  penetrationPower: 2.5
+  roundsPerMinute: 45
+  magazineSize: 5
+  reserveAmmo: 25
+  reloadMode: 0
+  reloadTime: 2.9
+  emptyReloadTime: 3.5
+  reloadCommitPoint: 0.8
+  shellInsertTime: 0.5
+  reloadStartTime: 0.35
+  equipTime: 0.65
+  holsterTime: 0.3
+  adsTime: 0.36
+  adsFov: 40
+  hasScope: 1
+  scopeFov: 18
+  moveSpeedMultiplier: 0.9
+  adsMoveMultiplier: 0.6
+  blockSprintWhileReloading: 1
+  hipSpread: 7
+  adsSpread: 0
+  moveSpread: 3
+  airSpread: 10
+  crouchSpreadMultiplier: 0.6
+  bloomPerShot: 0
+  maxBloom: 0
+  bloomRecovery: 6
+  recoilPattern:
+  - {x: 0.3, y: 2.5}
+  recoilRandomYaw: 0.4
+  recoilAdsMultiplier: 0.75
+  recoilRecoverySpeed: 6
+  recoilRecoveryFraction: 0.85
+  recoilResetTime: 0.22
+  viewKickBack: 0.1
+  viewKickUp: 6
+  viewKickRoll: 2
+  cameraShake: 0.5
+  tracerEvery: 1
+  tracerSpeed: 700
+  tracerColor: {r: 1, g: 0.82, b: 0.55, a: 1}
+  muzzleFlashScale: 1.3
+  fireSoundId: sniper
+  soundRange: 220
+  viewmodelOffset: {x: 0.18, y: -0.17, z: 0.34}
+  adsViewmodelOffset: {x: 0, y: -0.105, z: 0.22}

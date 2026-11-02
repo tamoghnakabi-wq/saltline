@@ -18,7 +18,7 @@ namespace Saltline.Sim
             public static StepParams Default => new StepParams { WeaponMoveMultiplier = 1f, AimMoveMultiplier = 1f, CanSprint = true };
         }
 
-        public static int EnvironmentMask = ~0;
+        public static int EnvironmentMask = Layers.EnvironmentMask;
 
         public static void Step(ref MotorState s, in InputCmd cmd, float dt, CharacterController cc,
             MotorSettings m, in StepParams p)
@@ -217,10 +217,13 @@ namespace Saltline.Sim
 
         static void Place(CharacterController cc, Vector3 feet, float height, MotorSettings m)
         {
-            if (!Mathf.Approximately(cc.height, height))
+            // The capsule's bottom must sit exactly at the feet. Check the center too: a controller
+            // that already has the right height but a default center would start half underground.
+            Vector3 center = new Vector3(0f, height * 0.5f + m.skinWidth, 0f);
+            if (!Mathf.Approximately(cc.height, height) || cc.center != center)
             {
                 cc.height = height;
-                cc.center = new Vector3(0f, height * 0.5f + m.skinWidth, 0f);
+                cc.center = center;
             }
             if (!Mathf.Approximately(cc.radius, m.radius)) cc.radius = m.radius;
             if ((cc.transform.position - feet).sqrMagnitude > 1e-12f)

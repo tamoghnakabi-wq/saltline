@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51e79c1a9bbff4c059d46657c509def6, type: 3}
+  m_Name: W1_SMR9_Wasp
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Weapons.WeaponDefinition
+  id: 1
+  displayName: SMR-9 Wasp
+  shortName: WASP
+  description: Fast-firing and mobile. Deadly up close, falls off quickly past 12
+    m.
+  weaponClass: 1
+  slot: 0
+  fireMode: 0
+  damage: 22
+  pellets: 1
+  headMultiplier: 1.5
+  upperTorsoMultiplier: 1
+  lowerTorsoMultiplier: 0.95
+  limbMultiplier: 0.85
+  falloffStart: 12
+  falloffEnd: 30
+  minDamageFactor: 0.64
+  maxRange: 150
+  penetrationPower: 0.6
+  roundsPerMinute: 900
+  magazineSize: 32
+  reserveAmmo: 160
+  reloadMode: 0
+  reloadTime: 1.8
+  emptyReloadTime: 2.2
+  reloadCommitPoint: 0.8
+  shellInsertTime: 0.5
+  reloadStartTime: 0.35
+  equipTime: 0.35
+  holsterTime: 0.2
+  adsTime: 0.16
+  adsFov: 60
+  hasScope: 0
+  scopeFov: 22
+  moveSpeedMultiplier: 1.03
+  adsMoveMultiplier: 1.05
+  blockSprintWhileReloading: 0
+  hipSpread: 1.6
+  adsSpread: 0.4
+  moveSpread: 0.8
+  airSpread: 3
+  crouchSpreadMultiplier: 0.8
+  bloomPerShot: 0.15
+  maxBloom: 1.8
+  bloomRecovery: 7
+  recoilPattern:
+  - {x: 0.04, y: 0.38}
+  - {x: 0.10959448, y: 0.39714286}
+  - {x: 0.1653323, y: 0.41428572}
+  - {x: 0.19611573, y: 0.43142858}
+  - {x: 0.19581562, y: 0.44857144}
+  - {x: 0.16449171, y: 0.46571428}
+  - {x: 0.10838081, y: 0.48285714}
+  - {x: 0.038654864, y: 0.5}
+  - {x: -0.030803256, y: 0.5}
+  - {x: -0.08616401, y: 0.5}
+  - {x: -0.20640482, y: 0.5}
+  - {x: -0.20550449, y: 0.5}
+  - {x: -0.17364235, y: 0.5}
+  - {x: -0.11716226, y: 0.5}
+  - {x: -0.047309823, y: 0.5}
+  - {x: 0.022007048, y: 0.425}
+  - {x: 0.076986834, y: 0.425}
+  - {x: 0.10668283, y: 0.425}
+  - {x: 0.10518239, y: 0.425}
+  - {x: 0.07278416, y: 0.425}
+  - {x: 0.015938956, y: 0.425}
+  - {x: -0.054035068, y: 0.425}
+  - {x: -0.12320569, y: 0.425}
+  - {x: -0.17780064, y: 0.425}
+  - {x: -0.20694977, y: 0.425}
+  - {x: -0.20484927, y: 0.425}
+  - {x: -0.1719174, y: 0.425}
+  - {x: -0.11471106, y: 0.425}
+  - {x: -0.044620406, y: 0.425}
+  - {x: 0.02439915, y: 0.425}
+  - {x: 0.0786055, y: 0.425}
+  - {x: 0.107205644, y: 0.425}
+  recoilRandomYaw: 0.22
+  recoilAdsMultiplier: 0.75
+  recoilRecoverySpeed: 9
+  recoilRecoveryFraction: 0.65
+  recoilResetTime: 0.22
+  viewKickBack: 0.03
+  viewKickUp: 1.6
+  viewKickRoll: 1.8
+  cameraShake: 0.15
+  tracerEvery: 1
+  tracerSpeed: 380
+  tracerColor: {r: 1, g: 0.82, b: 0.55, a: 1}
+  muzzleFlashScale: 1
+  fireSoundId: smg
+  soundRange: 120
+  viewmodelOffset: {x: 0.17, y: -0.16, z: 0.32}
+  adsViewmodelOffset: {x: 0, y: -0.06, z: 0.2}

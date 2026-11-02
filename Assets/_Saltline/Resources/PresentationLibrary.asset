@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 843b5554d59874a369047812754d13fc, type: 3}
+  m_Name: PresentationLibrary
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.FX.PresentationLibrary
+  teamRed: {fileID: 2100000, guid: 519a94995c47841e38e46d3ce23963a6, type: 2}
+  teamBlue: {fileID: 2100000, guid: af05e938ceffe425fb4195f32c96937e, type: 2}
+  neutralBody: {fileID: 2100000, guid: 420e3c8709cf74cab84f8ac2f1d499f2, type: 2}
+  gunMetal: {fileID: 2100000, guid: 39cbea01a64794d5db20b7d29a9858ab, type: 2}
+  gunAccent: {fileID: 2100000, guid: 8db29ff3a960e46bf894890d5eaf416b, type: 2}
+  tracer: {fileID: 2100000, guid: a65938c2c7fa44d89ac60c8efbae2944, type: 2}
+  impact: {fileID: 2100000, guid: bccdf5c38c81e43a8bbfeb4e91e00fc5, type: 2}
+  muzzleFlash: {fileID: 2100000, guid: f1a892afa2ee94d369cb2e2065a34cd7, type: 2}
