@@ -62,7 +62,7 @@ namespace Saltline.Player
             cam.cullingMask = ~(1 << Layers.Viewmodel);
             go.AddComponent<AudioListener>();
             var data = cam.GetUniversalAdditionalCameraData();
-            data.renderPostProcessing = true;
+            data.renderPostProcessing = Saltline.Settings.VideoSettings.PostProcessing;
             rig.MainCamera = cam;
 
             var vmGo = new GameObject("ViewmodelCamera");

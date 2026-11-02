@@ -35,6 +35,10 @@ namespace Saltline.Player
         public static event Action<KillEvent, NetPlayer, NetPlayer> ServerKilled;
         /// <summary>Host decides whether a dead player may respawn yet (match phases).</summary>
         public static Func<NetPlayer, bool> CanRespawn = _ => true;
+        /// <summary>Match phases that freeze players (loading, results). Checked on owner and host alike.</summary>
+        public static Func<bool> InputLocked = () => false;
+        /// <summary>Host: whether damage is applied at all (off on the results screen).</summary>
+        public static Func<bool> DamageEnabled = () => true;
 
         [SerializeField] GameConfig config;
 
@@ -278,6 +282,13 @@ namespace Saltline.Player
             var ms = config.motor;
             var def = db.Get(m_Weapon.ActiveId);
             InputCmd cmd = input;
+            if (InputLocked())
+            {
+                // Frozen by the match (results screen): looking around is allowed, nothing else.
+                cmd.MoveX = 0;
+                cmd.MoveY = 0;
+                cmd.Buttons &= InputButtons.ThirdPerson;
+            }
             if (cmd.Has(InputButtons.Fire)) cmd.Buttons &= ~InputButtons.Sprint; // firing cancels sprint
 
             var p = PlayerMotor.StepParams.Default;
@@ -609,7 +620,7 @@ namespace Saltline.Player
 
         public void ServerApplyDamage(NetPlayer attacker, int amount, byte weaponId, bool headshot, bool penetrated, Vector3 from)
         {
-            if (!IsServer || !AliveState.Value || Protected.Value || amount <= 0) return;
+            if (!IsServer || !AliveState.Value || Protected.Value || amount <= 0 || !DamageEnabled()) return;
             float now = ServerNow;
             m_LastDamageTime = now;
             m_RegenAccum = 0f;
@@ -662,10 +673,13 @@ namespace Saltline.Player
 
             var gs = GameSession.Instance;
             bool suicide = killer == null || killer == this;
+            // Team kills are not credited (friendly fire is off, but environmental or future
+            // damage sources must not hand out kills against teammates).
+            bool teamKill = !suicide && TeamState.Value != Team.None && killer.TeamState.Value == TeamState.Value;
             if (gs != null)
             {
                 gs.ModifyRecord(OwnerClientId, r => { r.Deaths++; return r; });
-                if (!suicide)
+                if (!suicide && !teamKill)
                 {
                     int score = config.killScore + (headshot ? config.headshotBonus : 0);
                     gs.ModifyRecord(killer.OwnerClientId, r => { r.Kills++; r.Score += score; return r; });

@@ -25,6 +25,8 @@ namespace Saltline.EditorTools
         {
             ProjectConfigurator.Apply();
             ContentFactory.Build();
+            MenuSceneFactory.Build();
+            UiFactory.Build();
             BootSceneFactory.Build();
             AssetDatabase.SaveAssets();
         }

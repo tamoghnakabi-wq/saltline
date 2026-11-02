@@ -20,10 +20,12 @@ namespace Saltline.Diagnostics
         protected readonly Dictionary<string, string> Result = new();
 
         protected abstract Task<bool> Run();
+        /// <summary>Command-line key that carries this test's role (host, client...).</summary>
+        protected virtual string RoleKey => "autotest";
 
         async void Start()
         {
-            Role = CommandLine.Get("autotest", "host").ToLowerInvariant();
+            Role = CommandLine.Get(RoleKey, "host").ToLowerInvariant();
             CodeFile = CommandLine.Get("codefile", Path.Combine(Application.temporaryCachePath, "saltline_code.txt"));
             OutFile = CommandLine.Get("testout");
             Timeout = CommandLine.GetFloat("testtimeout", 120f);

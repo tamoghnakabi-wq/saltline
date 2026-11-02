@@ -17,6 +17,8 @@ namespace Saltline.Net
         public static GameSession Instance { get; private set; }
         public static event Action<GameSession> Spawned;
         public static event Action Despawned;
+        /// <summary>Host: a player's record (and team) now exists.</summary>
+        public static event Action<ulong> RecordAdded;
 
         public NetworkList<PlayerRecord> Roster;
 
@@ -147,6 +149,7 @@ namespace Saltline.Net
             };
             Roster.Add(rec);
             Debug.Log($"[SALTLINE] Roster + {rec.Name} (client {clientId}, {rec.Platform}) -> {rec.Team}");
+            RecordAdded?.Invoke(clientId);
         }
 
         public int IndexOf(ulong clientId)

@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/_Saltline/Scenes/Boot.unity
     guid: 2cf27346561ef4308ad9db916d68bfda
   - enabled: 1
+    path: Assets/_Saltline/Scenes/Menu.unity
+    guid: 363f89155ebcb484785e0064b2996b91
+  - enabled: 1
     path: Assets/_Saltline/Scenes/Arena.unity
     guid: 90021d64bebc9451ab41b22106738d39
   m_configObjects:

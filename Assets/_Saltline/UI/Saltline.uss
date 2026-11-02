@@ -1,0 +1,590 @@
+/* SALTLINE runtime UI. Imported by SaltlineTheme.tss after Unity's default runtime theme.
+   Control overrides are prefixed with .sl-root so they outrank the default theme. */
+
+.sl-root {
+    --bg-0: rgb(9, 11, 15);
+    --panel: rgba(15, 19, 25, 0.94);
+    --panel-2: rgba(25, 31, 40, 0.96);
+    --raise: rgba(255, 255, 255, 0.06);
+    --raise-hover: rgba(255, 255, 255, 0.11);
+    --line: rgba(255, 255, 255, 0.09);
+    --text: rgb(233, 237, 241);
+    --text-dim: rgb(139, 149, 161);
+    --text-faint: rgb(92, 101, 112);
+    --accent: rgb(242, 154, 46);
+    --accent-hover: rgb(255, 178, 84);
+    --accent-soft: rgba(242, 154, 46, 0.16);
+    --red: rgb(232, 76, 80);
+    --red-soft: rgba(232, 76, 80, 0.16);
+    --blue: rgb(70, 146, 247);
+    --blue-soft: rgba(70, 146, 247, 0.16);
+    --ok: rgb(78, 197, 140);
+    --danger: rgb(232, 76, 80);
+
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    color: var(--text);
+    font-size: 18px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Medium.ttf");
+}
+
+/* ---------- typography ---------- */
+
+.f-black { -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.f-bold { -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.f-regular { -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Regular.ttf"); }
+.f-mono { -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+
+.eyebrow {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+}
+
+.title {
+    font-size: 40px;
+    letter-spacing: 2px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf");
+}
+
+.h2 {
+    font-size: 22px;
+    letter-spacing: 2px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+}
+
+.dim { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: 15px; }
+.accent { color: var(--accent); }
+.text-red { color: var(--red); }
+.text-blue { color: var(--blue); }
+.text-ok { color: var(--ok); }
+.wrap { white-space: normal; }
+.nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.center-text { -unity-text-align: middle-center; }
+.right-text { -unity-text-align: middle-right; }
+
+/* ---------- layout helpers ---------- */
+
+.row { flex-direction: row; align-items: center; }
+.col { flex-direction: column; }
+.grow { flex-grow: 1; }
+.fill { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.hidden { display: none; }
+.spacer { flex-grow: 1; }
+.self-start { align-self: flex-start; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-40 { margin-top: 40px; }
+.ml-8 { margin-left: 8px; }
+.ml-16 { margin-left: 16px; }
+.mr-8 { margin-right: 8px; }
+.mr-16 { margin-right: 16px; }
+
+.layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+.scrim { background-color: rgba(5, 7, 10, 0.72); }
+.scrim-light { background-color: rgba(5, 7, 10, 0.45); }
+
+.panel {
+    background-color: var(--panel);
+    border-width: 1px;
+    border-color: var(--line);
+    border-radius: 3px;
+    padding: 28px 32px;
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--line);
+    margin: 16px 0;
+}
+
+.chip {
+    font-size: 13px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    background-color: var(--raise);
+    color: var(--text-dim);
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+}
+
+.chip--accent { background-color: var(--accent-soft); color: var(--accent); }
+.chip--ok { background-color: rgba(78, 197, 140, 0.16); color: var(--ok); }
+.chip--red { background-color: var(--red-soft); color: var(--red); }
+.chip--blue { background-color: var(--blue-soft); color: var(--blue); }
+
+/* ---------- controls ---------- */
+
+.sl-root .btn {
+    background-color: var(--raise);
+    border-width: 0;
+    border-radius: 2px;
+    margin: 0;
+    padding: 12px 22px;
+    min-height: 48px;
+    color: var(--text);
+    font-size: 17px;
+    letter-spacing: 2px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+    transition-duration: 0.12s;
+}
+
+.sl-root .btn:hover { background-color: var(--raise-hover); }
+.sl-root .btn:active { background-color: rgba(255, 255, 255, 0.18); scale: 0.98 0.98; }
+.sl-root .btn:disabled { opacity: 0.35; }
+
+.sl-root .btn--primary { background-color: var(--accent); color: rgb(18, 14, 8); }
+.sl-root .btn--primary:hover { background-color: var(--accent-hover); }
+.sl-root .btn--danger { background-color: var(--red-soft); color: var(--red); }
+.sl-root .btn--danger:hover { background-color: rgba(232, 76, 80, 0.28); }
+.sl-root .btn--ghost { background-color: rgba(0, 0, 0, 0); border-width: 1px; border-color: var(--line); }
+.sl-root .btn--ghost:hover { background-color: var(--raise); }
+.sl-root .btn--small { min-height: 34px; padding: 6px 14px; font-size: 14px; }
+.sl-root .btn--wide { min-width: 240px; }
+.sl-root .btn--selected { background-color: var(--accent-soft); color: var(--accent); }
+
+/* Left-aligned navigation buttons with an accent bar on hover/selection. */
+.sl-root .nav-btn {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0 0 0 3px;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+    margin: 0 0 4px 0;
+    padding: 10px 18px;
+    min-height: 52px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf");
+    transition-duration: 0.12s;
+}
+
+.sl-root .nav-btn:hover { color: var(--text); background-color: rgba(255, 255, 255, 0.04); translate: 4px 0; }
+.sl-root .nav-btn--active { color: var(--text); border-color: var(--accent); background-color: rgba(242, 154, 46, 0.08); }
+
+.field-label {
+    font-size: 13px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+}
+
+.sl-root .unity-text-field { margin: 0; }
+.sl-root .unity-base-text-field__input {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 0 0 2px 0;
+    border-color: var(--line);
+    border-radius: 2px;
+    padding: 10px 14px;
+    min-height: 48px;
+    color: var(--text);
+    font-size: 20px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Medium.ttf");
+}
+
+.sl-root .unity-base-text-field:focus .unity-base-text-field__input { border-color: var(--accent); }
+.sl-root .code-field .unity-base-text-field__input {
+    font-size: 34px;
+    letter-spacing: 8px;
+    -unity-text-align: middle-center;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf");
+}
+
+.sl-root .unity-toggle { margin: 0; }
+.sl-root .unity-toggle__checkmark {
+    width: 22px;
+    height: 22px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 1px;
+    border-color: var(--line);
+    border-radius: 2px;
+    -unity-background-image-tint-color: var(--accent);
+}
+.sl-root .unity-toggle:checked .unity-toggle__checkmark { border-color: var(--accent); background-color: var(--accent-soft); }
+
+.sl-root .unity-base-slider { margin: 0; }
+.sl-root .unity-base-slider__tracker {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-width: 0;
+    height: 4px;
+    margin-top: -2px;
+    border-radius: 2px;
+}
+.sl-root .unity-base-slider__dragger {
+    background-color: var(--accent);
+    border-width: 0;
+    border-radius: 8px;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+}
+.sl-root .unity-base-slider__dragger-border { display: none; }
+
+.sl-root .unity-base-popup-field__input {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-width: 0;
+    border-radius: 2px;
+    min-height: 40px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 17px;
+}
+
+.unity-base-dropdown__container-inner {
+    background-color: rgb(25, 31, 40);
+    border-width: 1px;
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+.unity-base-dropdown__item { min-height: 34px; }
+.unity-base-dropdown__item:hover { background-color: rgba(242, 154, 46, 0.18); }
+.unity-base-dropdown__label {
+    color: rgb(233, 237, 241);
+    font-size: 16px;
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Medium.ttf");
+}
+
+.sl-root .unity-scroll-view__vertical-scroller { width: 8px; }
+.sl-root .unity-scroller__slider .unity-base-slider__dragger { background-color: rgba(255, 255, 255, 0.18); border-radius: 4px; width: 6px; margin-top: 0; }
+.sl-root .unity-scroller__low-button,
+.sl-root .unity-scroller__high-button { display: none; }
+
+/* Segmented control (e.g. PUBLIC / PRIVATE) */
+.segment { flex-direction: row; }
+.sl-root .segment__item { flex-grow: 1; border-radius: 0; margin: 0 2px 0 0; }
+
+/* ---------- main menu ---------- */
+
+.menu { flex-direction: row; }
+.menu-left {
+    width: 560px;
+    padding: 84px 0 56px 88px;
+    background-color: rgba(7, 9, 12, 0.7);
+    border-right-width: 1px;
+    border-color: var(--line);
+}
+.logo {
+    font-size: 92px;
+    letter-spacing: 14px;
+    color: var(--text);
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf");
+}
+.logo-bar { width: 72px; height: 4px; background-color: var(--accent); margin: 10px 0 14px 4px; }
+.logo-sub { font-size: 16px; letter-spacing: 6px; color: var(--text-dim); margin-left: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.menu-nav { margin-top: 56px; margin-right: 64px; }
+.menu-callsign { margin-top: 40px; margin-right: 88px; }
+.menu-footer { font-size: 13px; letter-spacing: 1px; color: var(--text-faint); }
+
+.menu-right { flex-grow: 1; padding: 84px 88px 56px 72px; }
+.menu-card { width: 760px; max-width: 100%; }
+.menu-card .title { margin-bottom: 6px; }
+
+.browse-head { padding-left: 16px; }
+.browse-list { height: 460px; margin-top: 8px; }
+.browse-row {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    background-color: var(--raise);
+    border-radius: 2px;
+}
+.browse-row:hover { background-color: var(--raise-hover); }
+.browse-cell { font-size: 16px; color: var(--text-dim); }
+.browse-name { width: 260px; color: var(--text); font-size: 18px; }
+.browse-map { width: 150px; }
+.browse-phase { width: 110px; }
+.browse-count { width: 70px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.empty-state { padding: 40px 0; color: var(--text-dim); -unity-text-align: middle-center; white-space: normal; }
+
+.error-text { color: var(--danger); white-space: normal; font-size: 16px; margin-top: 12px; }
+
+/* ---------- busy overlay ---------- */
+
+.busy { align-items: center; justify-content: center; }
+.spinner {
+    width: 44px;
+    height: 44px;
+    border-width: 4px;
+    border-radius: 22px;
+    border-color: rgba(255, 255, 255, 0.12);
+    border-top-color: var(--accent);
+    margin-bottom: 20px;
+}
+.busy-text { font-size: 18px; letter-spacing: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+
+/* ---------- lobby ---------- */
+
+.lobby { padding: 56px 72px 48px 72px; background-color: rgba(7, 9, 12, 0.55); }
+.lobby-header { flex-direction: row; align-items: flex-end; }
+.code-box { align-items: flex-end; }
+.code-text {
+    font-size: 46px;
+    letter-spacing: 8px;
+    color: var(--accent);
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf");
+}
+.lobby-body { flex-direction: row; flex-grow: 1; margin-top: 36px; }
+.team-col { flex-grow: 1; flex-basis: 0; }
+.team-head {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 18px;
+    border-width: 0 0 3px 0;
+    margin-bottom: 8px;
+}
+.team-head--red { border-color: var(--red); background-color: var(--red-soft); }
+.team-head--blue { border-color: var(--blue); background-color: var(--blue-soft); }
+.team-name { font-size: 26px; letter-spacing: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.team-count { font-size: 18px; color: var(--text-dim); -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+
+.slot {
+    flex-direction: row;
+    align-items: center;
+    height: 62px;
+    padding: 0 16px;
+    margin-bottom: 6px;
+    background-color: var(--panel);
+    border-width: 1px;
+    border-color: var(--line);
+    border-radius: 2px;
+}
+.slot--empty { background-color: rgba(15, 19, 25, 0.45); border-color: rgba(255, 255, 255, 0.04); }
+.slot--me { border-color: var(--accent); }
+.slot-name { font-size: 20px; flex-grow: 1; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.slot-empty-text { font-size: 15px; letter-spacing: 3px; color: var(--text-faint); }
+.slot-ping { width: 72px; font-size: 15px; color: var(--text-dim); -unity-text-align: middle-right; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.slot-ready { width: 108px; -unity-text-align: middle-center; margin-left: 12px; }
+
+.lobby-center { width: 420px; margin: 0 28px; }
+.map-card { padding: 24px 26px; }
+.map-name { font-size: 30px; letter-spacing: 2px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.rule-row { flex-direction: row; justify-content: space-between; padding: 8px 0; border-bottom-width: 1px; border-color: var(--line); }
+.rule-key { font-size: 15px; color: var(--text-dim); letter-spacing: 1px; }
+.rule-val { font-size: 15px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+
+.lobby-footer { flex-direction: row; align-items: center; margin-top: 28px; }
+.status-text { font-size: 17px; color: var(--text-dim); margin-right: 24px; -unity-text-align: middle-right; }
+
+/* ---------- loading ---------- */
+
+.loading { background-color: var(--bg-0); padding: 0 120px 96px 120px; justify-content: flex-end; }
+.loading-map { font-size: 120px; letter-spacing: 6px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.loading-blurb { font-size: 20px; color: var(--text-dim); width: 900px; white-space: normal; margin-top: 8px; }
+.progress { height: 3px; background-color: rgba(255, 255, 255, 0.08); margin-top: 48px; overflow: hidden; }
+.progress-fill { position: absolute; top: 0; bottom: 0; width: 22%; background-color: var(--accent); }
+.loading-tip { font-size: 16px; color: var(--text-faint); margin-top: 18px; white-space: normal; }
+
+/* ---------- HUD ---------- */
+
+.hud-text {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+}
+
+.scorebar { position: absolute; top: 22px; left: 0; right: 0; align-items: center; }
+.scorebar-row { flex-direction: row; align-items: stretch; }
+.score-box {
+    width: 92px;
+    height: 54px;
+    align-items: center;
+    justify-content: center;
+}
+.score-box--red { background-color: rgba(232, 76, 80, 0.85); }
+.score-box--blue { background-color: rgba(70, 146, 247, 0.85); }
+.score-num { font-size: 34px; color: rgb(255, 255, 255); -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.score-mine { border-bottom-width: 4px; border-color: rgb(255, 255, 255); }
+.timer-box { width: 140px; background-color: rgba(9, 11, 15, 0.78); align-items: center; justify-content: center; }
+.timer { font-size: 28px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.timer--low { color: var(--red); }
+.score-goal { font-size: 13px; letter-spacing: 3px; color: rgb(220, 226, 232); margin-top: 6px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+
+.banner { position: absolute; top: 150px; left: 0; right: 0; align-items: center; transition-duration: 0.25s; }
+.banner--off { opacity: 0; translate: 0 -12px; }
+.banner-title { font-size: 44px; letter-spacing: 8px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.banner-sub { font-size: 18px; letter-spacing: 3px; color: rgb(225, 230, 236); margin-top: 4px; }
+
+.killfeed { position: absolute; top: 24px; right: 28px; align-items: flex-end; }
+.feed-entry {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 12px;
+    margin-bottom: 4px;
+    background-color: rgba(9, 11, 15, 0.62);
+    border-radius: 2px;
+    transition-duration: 0.4s;
+}
+.feed-entry--me { background-color: rgba(242, 154, 46, 0.28); }
+.feed-entry--old { opacity: 0; }
+.feed-name { font-size: 17px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.feed-weapon { font-size: 13px; letter-spacing: 1px; color: rgb(214, 220, 228); margin: 0 10px; padding: 2px 7px; background-color: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+.feed-tag { font-size: 12px; letter-spacing: 1px; color: var(--accent); margin-right: 8px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+
+.vitals { position: absolute; left: 40px; bottom: 36px; }
+.hp-num { font-size: 52px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.hp-bar { width: 300px; height: 8px; background-color: rgba(0, 0, 0, 0.45); margin-top: 4px; }
+.hp-fill { height: 100%; background-color: rgb(236, 241, 246); }
+.hp-fill--low { background-color: var(--red); }
+
+.weapon-box { position: absolute; right: 40px; bottom: 36px; align-items: flex-end; }
+.ammo-row { flex-direction: row; align-items: flex-end; }
+.ammo-mag { font-size: 58px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.ammo-mag--low { color: var(--accent); }
+.ammo-mag--empty { color: var(--red); }
+.ammo-reserve { font-size: 24px; color: rgb(200, 207, 214); margin-left: 8px; margin-bottom: 10px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.weapon-name { font-size: 16px; letter-spacing: 3px; color: rgb(220, 226, 232); -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.weapon-state { font-size: 14px; letter-spacing: 3px; color: var(--accent); margin-top: 2px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.slot-strip { flex-direction: row; margin-top: 10px; }
+.slot-pill { font-size: 13px; letter-spacing: 1px; padding: 3px 9px; margin-left: 6px; background-color: rgba(0, 0, 0, 0.4); color: rgb(150, 158, 168); border-radius: 2px; }
+.slot-pill--active { background-color: rgba(255, 255, 255, 0.16); color: rgb(255, 255, 255); }
+
+.crosshair { position: absolute; left: 50%; top: 50%; }
+.ch-line { position: absolute; background-color: rgba(255, 255, 255, 0.92); }
+.ch-dot { position: absolute; width: 2px; height: 2px; left: -1px; top: -1px; background-color: rgba(255, 255, 255, 0.92); }
+.hitmarker { position: absolute; left: 50%; top: 50%; }
+.hm-line { position: absolute; width: 11px; height: 2px; background-color: rgb(255, 255, 255); }
+.hm--kill .hm-line { background-color: var(--red); }
+.hm--head .hm-line { background-color: rgb(255, 214, 92); }
+
+.dmg-ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.dmg-wedge {
+    position: absolute;
+    left: -36px;
+    top: -150px;
+    width: 72px;
+    height: 10px;
+    background-color: rgb(232, 60, 50);
+    border-radius: 3px;
+}
+
+.center-msg { position: absolute; left: 0; right: 0; top: 58%; align-items: center; }
+.protect-chip { font-size: 14px; letter-spacing: 4px; padding: 6px 14px; background-color: rgba(70, 146, 247, 0.35); border-radius: 2px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+
+.death { align-items: center; justify-content: center; background-color: rgba(60, 6, 8, 0.32); }
+.death-title { font-size: 20px; letter-spacing: 5px; color: rgb(236, 210, 210); -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.death-killer { font-size: 40px; letter-spacing: 2px; margin-top: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.death-count { font-size: 22px; letter-spacing: 3px; margin-top: 18px; color: rgb(236, 240, 244); }
+
+.lowhp { background-color: rgba(170, 10, 10, 0.24); opacity: 0; }
+
+.tps-block { position: absolute; width: 16px; height: 16px; }
+
+/* ---------- scoreboard ---------- */
+
+.board { flex-direction: row; justify-content: center; }
+.board-team { width: 620px; margin: 0 10px; }
+.board-head { flex-direction: row; align-items: center; padding: 12px 16px; border-width: 0 0 3px 0; }
+.board-cols { flex-direction: row; padding: 8px 16px; }
+.board-row { flex-direction: row; align-items: center; height: 46px; padding: 0 16px; margin-bottom: 3px; background-color: rgba(15, 19, 25, 0.9); }
+.board-row--me { background-color: rgba(242, 154, 46, 0.18); }
+.board-row--empty { background-color: rgba(15, 19, 25, 0.4); }
+.bc-name { flex-grow: 1; font-size: 18px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.bc-num { width: 56px; font-size: 18px; -unity-text-align: middle-right; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.bc-wide { width: 84px; }
+.bc-head { font-size: 12px; letter-spacing: 2px; color: var(--text-dim); -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.board-title { font-size: 26px; letter-spacing: 4px; flex-grow: 1; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.board-score { font-size: 34px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.board-overlay { align-items: center; justify-content: center; }
+.board-caption { font-size: 14px; letter-spacing: 3px; color: rgb(220, 226, 232); margin-bottom: 14px; }
+
+/* ---------- results ---------- */
+
+.results { align-items: center; padding-top: 72px; background-color: rgba(7, 9, 12, 0.82); }
+.results-verdict { font-size: 110px; letter-spacing: 16px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf"); }
+.verdict--win { color: var(--accent); }
+.verdict--loss { color: rgb(200, 206, 214); }
+.results-score { font-size: 26px; letter-spacing: 4px; margin-top: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.results-reason { font-size: 15px; letter-spacing: 3px; color: var(--text-dim); margin-top: 6px; }
+.mvp { flex-direction: row; align-items: center; margin: 28px 0 24px 0; padding: 12px 22px; background-color: var(--accent-soft); border-left-width: 3px; border-color: var(--accent); }
+.results-footer { flex-direction: row; align-items: center; margin-top: 28px; }
+
+/* ---------- pause / settings / modal ---------- */
+
+.pause { flex-direction: row; }
+.pause-left { width: 520px; padding: 120px 0 0 88px; background-color: rgba(7, 9, 12, 0.88); }
+.pause-buttons { margin-right: 88px; }
+.pause-left .btn { margin-bottom: 8px; -unity-text-align: middle-left; padding-left: 22px; }
+
+.settings { align-items: center; justify-content: center; }
+.settings-panel { width: 1180px; height: 780px; padding: 0; }
+.settings-head { flex-direction: row; align-items: center; padding: 26px 32px 0 32px; }
+.tabs { flex-direction: row; padding: 0 32px; margin-top: 18px; border-bottom-width: 1px; border-color: var(--line); }
+.sl-root .tab {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0 0 3px 0;
+    border-color: rgba(0, 0, 0, 0);
+    border-radius: 0;
+    margin: 0 26px 0 0;
+    padding: 10px 2px;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf");
+}
+.sl-root .tab:hover { color: var(--text); }
+.sl-root .tab--active { color: var(--text); border-color: var(--accent); }
+.settings-body { flex-grow: 1; padding: 12px 32px; }
+.settings-foot { flex-direction: row; padding: 18px 32px 26px 32px; border-top-width: 1px; border-color: var(--line); }
+
+.set-row { flex-direction: row; align-items: center; min-height: 56px; border-bottom-width: 1px; border-color: rgba(255, 255, 255, 0.05); }
+.set-label { width: 380px; font-size: 18px; }
+.set-hint { font-size: 14px; color: var(--text-faint); margin-top: 2px; white-space: normal; }
+.set-control { flex-grow: 1; flex-direction: row; align-items: center; }
+.set-value { width: 80px; font-size: 16px; -unity-text-align: middle-right; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.set-section { font-size: 13px; letter-spacing: 3px; color: var(--accent); margin-top: 20px; margin-bottom: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.sl-root .bind-btn { min-width: 200px; min-height: 38px; padding: 4px 14px; margin-right: 8px; font-size: 15px; letter-spacing: 1px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/RobotoMono-Bold.ttf"); }
+.sl-root .bind-btn--listening { background-color: var(--accent-soft); color: var(--accent); }
+
+.modal { align-items: center; justify-content: center; }
+.modal-panel { width: 620px; }
+.modal-body { white-space: normal; color: var(--text-dim); font-size: 18px; margin-top: 12px; }
+.modal-actions { flex-direction: row; justify-content: flex-end; margin-top: 28px; }
+.modal-actions .btn { margin-left: 10px; }
+
+.toast-stack { position: absolute; bottom: 40px; left: 0; right: 0; align-items: center; }
+.toast { padding: 12px 22px; margin-top: 6px; background-color: var(--panel-2); border-left-width: 3px; border-color: var(--accent); border-radius: 2px; transition-duration: 0.3s; }
+.toast--old { opacity: 0; }
+
+/* ---------- readability pass (from the UI capture review) ----------
+   UI Toolkit blends in linear colour space, so translucent dark panels let bright scenery show
+   through more than their alpha suggests. Overlays that carry text are kept near-opaque. */
+
+.sl-root { --panel: rgba(15, 19, 25, 0.97); }
+.scrim { background-color: rgba(5, 7, 10, 0.8); }
+.lobby { background-color: rgba(7, 9, 12, 0.7); }
+
+/* Spacing helpers must win over control resets such as `.sl-root .btn { margin: 0 }`. */
+.sl-root .mt-8 { margin-top: 8px; }
+.sl-root .mt-16 { margin-top: 16px; }
+.sl-root .mt-24 { margin-top: 24px; }
+.sl-root .mt-40 { margin-top: 40px; }
+.sl-root .ml-8 { margin-left: 8px; }
+.sl-root .ml-16 { margin-left: 16px; }
+.sl-root .mr-8 { margin-right: 8px; }
+.sl-root .mr-16 { margin-right: 16px; }
+
+.sl-root .unity-base-text-field__input--placeholder,
+.sl-root .unity-base-text-field__input--placeholder .unity-text-element { color: var(--text-faint); }
+
+.settings-panel { background-color: rgb(15, 19, 25); }
+.settings-head, .tabs, .settings-foot { flex-shrink: 0; }
+.settings-body { flex-shrink: 1; }
+
+.feed-entry { background-color: rgba(9, 11, 15, 0.8); }
+.feed-entry--me { background-color: rgba(9, 11, 15, 0.92); border-left-width: 3px; border-color: var(--accent); }
+
+.board-team { background-color: rgba(10, 13, 18, 0.9); }
+.board-row--me { background-color: rgba(60, 45, 24, 0.97); border-left-width: 4px; border-color: var(--accent); }
+.board-row--empty { background-color: rgba(15, 19, 25, 0.6); }
+
+.death { background-color: rgba(60, 6, 8, 0.2); }

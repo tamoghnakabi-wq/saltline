@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real Unity Relay multiplayer tests using headless player builds (no editor).
 #
-#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|net|all] [binary]
+#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|match|matchdraw|ui|net|gameplay|all] [binary]
 #
 # Each test starts separate game processes, each signed in as its own anonymous Unity
 # player (-profile), and communicating only through Unity Relay. Results land in
@@ -122,6 +122,41 @@ test_combatlag() { local SAVED="$APP"; needdev combatlag || return; run_combat c
 # which shows the lag-compensated runs are not passing by accident.
 test_combatnolag() { local SAVED="$APP"; needdev combatnolag || return; run_combat combatnolag "-lagcomp 0" "-netsim $LAGSIM -expectmiss"; APP="$SAVED"; }
 
+# Team Deathmatch flow: lobby rules, warmup, live, score limit, results, back to the lobby.
+# Short custom rules so a full match fits in about a minute. Kills are applied on the host via
+# the normal damage path (aim and hit registration are what the combat tests cover).
+test_match() {
+  local R="$PWD/AutoTest/match_$(date +%H%M%S)"; mkdir -p "$R"
+  player -autotest match-host -profile t_host -codefile "$R/code.txt" -testtimeout 200 -warmup 5 -scorelimit 3 -timelimit 120 -resultstime 5 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+  player -autotest match-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 200 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  wait $C; wait $H
+  summary "$R"
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record match PASS || record match FAIL
+}
+
+# Public match, time-limit draw, plus a third player who finds the match by browsing and joins
+# mid-match (assist, team-kill rule, leaving mid-match).
+test_matchdraw() {
+  local R="$PWD/AutoTest/matchdraw_$(date +%H%M%S)"; mkdir -p "$R"
+  player -autotest match-host -scenario draw -latefile "$R/late.txt" -profile t_host -codefile "$R/code.txt" -testtimeout 240 -warmup 5 -scorelimit 50 -timelimit 60 -resultstime 5 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" & local H=$!
+  player -autotest match-client -expectwinner none -profile t_c1 -codefile "$R/code.txt" -testtimeout 240 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  player -autotest match-late -profile t_c2 -codefile "$R/late.txt" -testtimeout 240 -testout "$R/late.json" -logFile "$R/late.log" & local L=$!
+  wait $L; wait $C; wait $H
+  summary "$R"
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && [ "$(result_of "$R/late.json")" = "PASS" ] && record matchdraw PASS || record matchdraw FAIL
+}
+
+# Menus and HUD: a rendering host (batch mode with Metal, no window) presses the real buttons and
+# saves a composited picture of every screen; a headless client joins, readies and plays along.
+test_ui() {
+  local R="$PWD/AutoTest/ui_$(date +%H%M%S)"; mkdir -p "$R/shots"
+  ( exec "$APP" -batchmode -uitest host -capture "$R/shots" -profile t_host -codefile "$R/code.txt" -testtimeout 240 -warmup 4 -scorelimit 3 -timelimit 120 -resultstime 6 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" >/dev/null 2>&1 ) & local H=$!
+  player -autotest match-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 240 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  wait $C; wait $H
+  summary "$R"
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record ui PASS || record ui FAIL
+}
+
 case "$WHICH" in
   pair) test_pair ;;
   capacity) test_capacity ;;
@@ -131,9 +166,12 @@ case "$WHICH" in
   combat) test_combat ;;
   combatlag) test_combatlag ;;
   combatnolag) test_combatnolag ;;
+  match) test_match ;;
+  matchdraw) test_matchdraw ;;
+  ui) test_ui ;;
   net) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency ;;
-  gameplay) test_combat; test_combatlag; test_combatnolag ;;
-  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency; test_combat; test_combatlag; test_combatnolag ;;
+  gameplay) test_combat; test_combatlag; test_combatnolag; test_match; test_matchdraw ;;
+  all) test_pair; test_capacity; test_hostloss; test_hostquit; test_latency; test_combat; test_combatlag; test_combatnolag; test_match; test_matchdraw ;;
   *) echo "unknown test: $WHICH"; exit 2 ;;
 esac
 exit $OVERALL

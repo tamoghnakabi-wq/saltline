@@ -206,7 +206,7 @@ namespace Saltline.EditorTools
             return lib;
         }
 
-        static Material Lit(string name, Color c, float smooth, float metal)
+        internal static Material Lit(string name, Color c, float smooth, float metal)
         {
             string path = $"{ArtDir}/Materials/{name}.mat";
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -377,7 +377,7 @@ namespace Saltline.EditorTools
             EditorSceneManager.SaveScene(scene, ArenaScenePath);
         }
 
-        static VolumeProfile PostProfile()
+        internal static VolumeProfile PostProfile()
         {
             string path = DataDir + "/PostFX_Default.asset";
             var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);

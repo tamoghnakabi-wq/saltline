@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2739328075159768200}
   - component: {fileID: 6889269625873755466}
   - component: {fileID: 5365896477348952288}
+  - component: {fileID: 2580118372279339794}
   m_Layer: 0
   m_Name: GameSession
   m_TagString: Untagged
@@ -46,16 +47,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1984195534
+  GlobalObjectIdHash: 4246621217
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 1
+  m_InScenePlaced: 0
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 0
+  SceneMigrationSynchronization: 1
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -90,4 +91,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6eb91ec13d344083820282fdc1d9e95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Saltline.Runtime::Saltline.Net.NetDiagnostics
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &2580118372279339794
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4812680137105017596}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10cdffc8ca9274a44b71d9863dc2f49a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Match.MatchDirector
   ShowTopMostFoldoutHeaderGroup: 1

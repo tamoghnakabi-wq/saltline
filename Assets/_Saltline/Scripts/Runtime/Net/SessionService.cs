@@ -120,13 +120,15 @@ namespace Saltline.Net
         }
 
         /// <summary>Host only: mirror match phase into the session so browsers can show it.</summary>
-        public static async Task PublishPhaseAsync(string phase, bool lockJoins)
+        public static async Task PublishPhaseAsync(string phase, bool lockJoins, string mapId = null)
         {
             if (Current == null || !Current.IsHost) return;
             try
             {
                 var host = Current.AsHost();
                 host.SetProperty(BuildInfo.PropPhase, new SessionProperty(phase, VisibilityPropertyOptions.Public, PropertyIndex.String3));
+                if (!string.IsNullOrEmpty(mapId))
+                    host.SetProperty(BuildInfo.PropMap, new SessionProperty(mapId, VisibilityPropertyOptions.Public, PropertyIndex.String2));
                 host.IsLocked = lockJoins;
                 await host.SavePropertiesAsync();
             }

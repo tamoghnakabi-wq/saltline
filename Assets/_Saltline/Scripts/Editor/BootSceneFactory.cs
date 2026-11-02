@@ -81,6 +81,7 @@ namespace Saltline.EditorTools
             go.AddComponent<NetworkObject>();
             go.AddComponent<GameSession>();
             go.AddComponent<NetDiagnostics>();
+            go.AddComponent<Saltline.Match.MatchDirector>();
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);

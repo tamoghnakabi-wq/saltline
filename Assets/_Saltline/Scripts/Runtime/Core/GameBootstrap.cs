@@ -59,12 +59,24 @@ namespace Saltline.Core
             SessionService.SessionLost += reason => PendingNotice = reason;
             NetPlayer.LocalSpawned += OnLocalPlayerSpawned;
 
+            if (RunMode.Presentation)
+            {
+                Saltline.Settings.VideoSettings.ApplyAll();
+                AudioListener.volume = Saltline.Settings.GameSettings.MasterVolume;
+            }
+            // The menu UI exists whenever something is rendered (and not under a headless test).
+            if (RunMode.Presentation && !CommandLine.Has("autotest")) UiRoot.Ensure();
+
             if (CommandLine.Has("autotest"))
             {
-                if (CommandLine.Get("autotest", "").StartsWith("combat")) gameObject.AddComponent<CombatAutoTest>();
+                string mode = CommandLine.Get("autotest", "");
+                if (mode.StartsWith("combat")) gameObject.AddComponent<CombatAutoTest>();
+                else if (mode.StartsWith("match")) gameObject.AddComponent<MatchAutoTest>();
                 else gameObject.AddComponent<RelayAutoTest>();
                 return;
             }
+            // -uitest drives the real menus with simulated button presses and captures each screen.
+            if (CommandLine.Has("uitest")) gameObject.AddComponent<UiAutoTest>();
 
             if (Application.CanStreamedLevelBeLoaded(menuScene))
                 SceneManager.LoadScene(menuScene);
@@ -78,6 +90,16 @@ namespace Saltline.Core
             if (sessionPrefab == null || GameSession.Instance != null) return;
             var instance = Instantiate(sessionPrefab);
             instance.Spawn(destroyWithScene: false);
+        }
+
+        /// <summary>Load the menu scene (offline) if we are somewhere else, e.g. after leaving a match.</summary>
+        public static void LoadMenuSceneIfNeeded()
+        {
+            string menu = Instance != null ? Instance.menuScene : "Menu";
+            if (SceneManager.GetActiveScene().name == menu || !Application.CanStreamedLevelBeLoaded(menu)) return;
+            var nm = NetworkManager.Singleton;
+            if (nm != null && (nm.IsListening || nm.ShutdownInProgress)) return;
+            SceneManager.LoadScene(menu);
         }
 
         /// <summary>A human gets keyboard/mouse control, camera, HUD and effects. Tests attach bots instead.</summary>

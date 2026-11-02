@@ -16,6 +16,8 @@ namespace Saltline.Match
         static NetworkObject s_Prefab;
 
         public static bool Enabled = true;
+        /// <summary>Match phases that allow spawning (set by the match director).</summary>
+        public static System.Func<bool> CanSpawn = () => true;
 
         public static void Install(NetworkManager nm, NetworkObject playerPrefab)
         {
@@ -27,24 +29,31 @@ namespace Saltline.Match
                 nm.SceneManager.OnLoadEventCompleted += (scene, mode, done, timedOut) => SpawnMissing();
                 nm.SceneManager.OnSynchronizeComplete += clientId => SpawnFor(clientId);
             }
+            // A mid-match joiner finishes synchronizing before the host has added its roster
+            // record; it is spawned once the record (and so its team) exists.
+            GameSession.RecordAdded += SpawnFor;
             SpawnMissing();
         }
 
         public static void SpawnMissing()
         {
-            if (s_Nm == null || !s_Nm.IsServer || !Enabled) return;
+            if (s_Nm == null || !s_Nm.IsServer || !Enabled || !CanSpawn()) return;
             foreach (ulong id in s_Nm.ConnectedClientsIds) SpawnFor(id);
         }
 
         public static void SpawnFor(ulong clientId)
         {
             var nm = s_Nm;
-            if (nm == null || !nm.IsServer || !Enabled || s_Prefab == null) return;
+            if (nm == null || !nm.IsServer || !Enabled || !CanSpawn() || s_Prefab == null) return;
             if (!SpawnDirector.HasSpawnPoints) return; // not in a gameplay scene
             if (!nm.ConnectedClients.TryGetValue(clientId, out var client) || client.PlayerObject != null) return;
 
             Team team = Team.None;
-            if (GameSession.Instance != null && GameSession.Instance.TryGet(clientId, out var rec)) team = rec.Team;
+            if (GameSession.Instance != null)
+            {
+                if (!GameSession.Instance.TryGet(clientId, out var rec)) return; // no team yet: RecordAdded spawns it
+                team = rec.Team;
+            }
 
             var go = Object.Instantiate(s_Prefab.gameObject);
             var player = go.GetComponent<NetPlayer>();
