@@ -61,6 +61,7 @@ namespace Saltline.Player
             cam.farClipPlane = 800f;
             cam.cullingMask = ~(1 << Layers.Viewmodel);
             go.AddComponent<AudioListener>();
+            go.AddComponent<Saltline.FX.ExposureAdaptation>();
             var data = cam.GetUniversalAdditionalCameraData();
             data.renderPostProcessing = Saltline.Settings.VideoSettings.PostProcessing;
             rig.MainCamera = cam;

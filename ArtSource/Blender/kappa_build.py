@@ -25,27 +25,30 @@ from mathutils import Vector, noise
 ROOT = globals().get("SALTLINE_ROOT") or os.environ.get("SALTLINE_ROOT")
 assert ROOT, "SALTLINE_ROOT is not set"
 TEX_DIR = os.path.join(ROOT, "Assets", "_Saltline", "Art", "Maps", "Kappa", "Textures")
+CC0_DIR = os.path.join(ROOT, "Assets", "_Saltline", "Art", "Maps", "Kappa", "TexturesCC0")
 FBX_PATH = os.path.join(ROOT, "Assets", "_Saltline", "Art", "Maps", "Kappa", "Kappa.fbx")
 BLEND_PATH = os.path.join(ROOT, "ArtSource", "Blender", "kappa.blend")
 DO_EXPORT = globals().get("KAPPA_EXPORT", True)
 
-# material -> texture, UV metres per tile (u, v), tint
+# material -> texture, UV metres per tile (u, v), tint.
+# Tile sizes match the real-world size of the CC0 scans (ArtSource/Textures/import_cc0.py, sources.json).
 MATS = {
-    "M_Asphalt": ("Asphalt", (6, 6), (1, 1, 1)),
-    "M_Concrete": ("Concrete", (4, 4), (1, 1, 1)),
-    "M_ConcreteFloor": ("ConcreteFloor", (4, 4), (1, 1, 1)),
-    "M_Facade": ("Facade", (4, 3.6), (1, 1, 1)),
-    "M_Salt": ("Salt", (5, 5), (1, 1, 1)),
+    "M_Asphalt": ("Asphalt", (3, 3), (1, 1, 1)),
+    "M_Concrete": ("Concrete", (2, 2), (1, 1, 1)),
+    "M_ConcreteFloor": ("ConcreteFloor", (3, 3), (1, 1, 1)),
+    "M_Facade": ("Facade", (2, 2), (1, 1, 1)),
+    "M_Salt": ("Salt", (2.14, 2.14), (1, 1, 1)),
     "M_Sacks": ("Sacks", (1.2, 1.2), (1, 1, 1)),
     "M_Metal": ("Metal", (2, 2), (1, 1, 1)),
     "M_Plate": ("Metal", (2, 2), (1.5, 1.4, 1.25)),
-    "M_Grate": ("Grate", (1, 1), (1, 1, 1)),
-    "M_TankPaint": ("TankPaint", (4, 4), (1, 1, 1)),
-    "M_Rust": ("Rust", (2, 2), (1, 1, 1)),
-    "M_Corrugated": ("Corrugated", (2, 2), (1, 1, 1)),
-    "M_Container": ("Container", (2.24, 2.24), (1, 1, 1)),
-    "M_Wood": ("Wood", (1.5, 1.5), (1, 1, 1)),
-    "M_Rock": ("Rock", (6, 6), (1, 1, 1)),
+    "M_Grate": ("Grate", (0.5, 0.5), (1, 1, 1)),
+    "M_TankPaint": ("TankPaint", (2, 2), (1, 1, 1)),
+    "M_Rust": ("Rust", (2.2, 2.2), (1, 1, 1)),
+    "M_Corrugated": ("Corrugated", (2.7, 2.7), (1, 1, 1)),
+    "M_Container": ("Container", (1.94, 1.94), (1, 1, 1)),
+    "M_Wood": ("Wood", (2, 2), (1, 1, 1)),
+    "M_Rock": ("Rock", (2.4, 2.4), (1, 1, 1)),
+    "M_Ground": ("Ground", (4, 4), (1, 1, 1)),
     "M_Hazard": ("Hazard", (1, 1), (1, 1, 1)),
     "M_PaintYellow": ("Paint", (2, 2), (0.86, 0.62, 0.1)),
     "M_PaintRed": ("Paint", (2, 2), (0.72, 0.13, 0.09)),
@@ -459,7 +462,7 @@ def build_center():
         x = -160 + i * 4.0
         y = 37.0 + j * 4.0
         return Vector((x, y, 3.0 if j == 0 else hill_z(x, y)))
-    grid_surface(G("Hillside", "M_Rock", "far", uvmul=3.0), 80, 22, hill, want=(0, 0, 1))
+    grid_surface(G("Hillside", "M_Ground", "far", uvmul=2.0), 80, 22, hill, want=(0, 0, 1))
     boulders = G("HillRocks", "M_Rock", "far", uvmul=1.5)
     for k in range(34):
         bxp = -150 + k * 9.1 + 4.0 * noise.noise(Vector((k * 0.9, 1.1, 0.2)))
@@ -772,7 +775,9 @@ def make_material(name):
         bsdf.inputs["Emission Color"].default_value = (*tint, 1)
         bsdf.inputs["Emission Strength"].default_value = 6.0
     if tex:
-        path = os.path.join(TEX_DIR, f"T_{tex}_D.png")
+        path = os.path.join(CC0_DIR, f"T_{tex}_D.jpg")
+        if not os.path.exists(path):
+            path = os.path.join(TEX_DIR, f"T_{tex}_D.png")
         img = bpy.data.images.get(os.path.basename(path)) or bpy.data.images.load(path, check_existing=True)
         node = nt.nodes.new("ShaderNodeTexImage")
         node.image = img

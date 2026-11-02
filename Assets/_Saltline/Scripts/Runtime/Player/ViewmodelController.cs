@@ -21,6 +21,9 @@ namespace Saltline.Player
         PlayerCameraRig m_Rig;
         Transform m_Gun;
         Transform m_Sight;
+        WeaponRig m_Parts;
+        bool m_ReloadFromEmpty;
+        WeaponAction m_LastAction;
         byte m_BuiltFor = 255;
         Vector3 m_Sway;
         Vector3 m_KickPos, m_KickRot;
@@ -50,6 +53,7 @@ namespace Saltline.Player
             float adsDamp = Mathf.Lerp(1f, 0.45f, m_P.SimWeapon.Ads);
             m_KickPos += new Vector3(0f, 0.004f, -w.viewKickBack) * adsDamp;
             m_KickRot += new Vector3(-w.viewKickUp, Random.Range(-0.4f, 0.4f) * w.viewKickRoll, Random.Range(-1f, 1f) * w.viewKickRoll) * adsDamp;
+            if (m_Parts != null && fx.WeaponId == m_BuiltFor) m_Parts.OnShot(w.FireInterval);
         }
 
         void LateUpdate()
@@ -111,12 +115,17 @@ namespace Saltline.Player
             m_Gun.localPosition = basePos + bob + sprintPos + m_KickPos + Vector3.down * lower;
             m_Gun.localRotation = Quaternion.Euler(m_Sway + m_KickRot + actionRot + sprintRot);
             m_Gun.gameObject.SetActive(pose.Alive);
+
+            // Moving parts. An empty reload is remembered from its first frame (ammo changes at the commit point).
+            if (ws.Action == WeaponAction.Reloading && m_LastAction != WeaponAction.Reloading) m_ReloadFromEmpty = ws.Mag == 0;
+            m_LastAction = ws.Action;
+            if (m_Parts != null) m_Parts.Tick(ws.Action, p, m_ReloadFromEmpty, ws.Mag == 0, ws.TriggerHeld, dt);
         }
 
         void Rebuild(WeaponDefinition w)
         {
             if (m_Gun != null) Destroy(m_Gun.gameObject);
-            m_Gun = GreyboxGun.Build(w.weaponClass, transform, Layers.Viewmodel, out var muzzle, out m_Sight);
+            m_Gun = WeaponModel.Build(w.weaponClass, transform, Layers.Viewmodel, WeaponView.FirstPerson, out var muzzle, out m_Sight, out m_Parts);
             Muzzle = muzzle;
             m_BuiltFor = w.id;
         }

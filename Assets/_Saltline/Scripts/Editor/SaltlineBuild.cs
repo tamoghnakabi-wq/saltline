@@ -24,6 +24,7 @@ namespace Saltline.EditorTools
         public static void Setup()
         {
             ProjectConfigurator.Apply();
+            RenderingConfigurator.Apply();
             ContentFactory.Build();
             KappaSceneFactory.Build();
             MenuSceneFactory.Build();

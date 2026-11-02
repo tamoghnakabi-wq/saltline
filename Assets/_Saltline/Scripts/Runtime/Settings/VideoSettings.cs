@@ -39,20 +39,21 @@ namespace Saltline.Settings
             public readonly bool PostFx;
             public readonly AnisotropicFiltering Aniso;
             public readonly int TextureMipLimit;
+            public readonly int ShadowResolution;
 
-            public PresetValues(float scale, int msaa, float shadow, int cascades, bool hdr, bool post, AnisotropicFiltering aniso, int mip)
+            public PresetValues(float scale, int msaa, float shadow, int cascades, bool hdr, bool post, AnisotropicFiltering aniso, int mip, int shadowRes)
             {
-                RenderScale = scale; Msaa = msaa; ShadowDistance = shadow; Cascades = cascades; Hdr = hdr; PostFx = post; Aniso = aniso; TextureMipLimit = mip;
+                RenderScale = scale; Msaa = msaa; ShadowDistance = shadow; Cascades = cascades; Hdr = hdr; PostFx = post; Aniso = aniso; TextureMipLimit = mip; ShadowResolution = shadowRes;
             }
         }
 
         public static PresetValues Values(QualityPreset p) => p switch
         {
-            QualityPreset.Low => new PresetValues(0.75f, 1, 35f, 1, false, false, AnisotropicFiltering.Disable, 1),
-            QualityPreset.Medium => new PresetValues(0.9f, 2, 60f, 2, true, true, AnisotropicFiltering.Enable, 0),
-            QualityPreset.High => new PresetValues(1f, 4, 90f, 4, true, true, AnisotropicFiltering.ForceEnable, 0),
-            QualityPreset.Ultra => new PresetValues(1f, 4, 130f, 4, true, true, AnisotropicFiltering.ForceEnable, 0),
-            _ => new PresetValues(0.8f, 1, 55f, 2, true, true, AnisotropicFiltering.Enable, 0),
+            QualityPreset.Low => new PresetValues(0.75f, 1, 35f, 1, false, false, AnisotropicFiltering.Disable, 1, 1024),
+            QualityPreset.Medium => new PresetValues(0.9f, 2, 60f, 2, true, true, AnisotropicFiltering.Enable, 0, 2048),
+            QualityPreset.High => new PresetValues(1f, 4, 90f, 4, true, true, AnisotropicFiltering.ForceEnable, 0, 4096),
+            QualityPreset.Ultra => new PresetValues(1f, 4, 130f, 4, true, true, AnisotropicFiltering.ForceEnable, 0, 4096),
+            _ => new PresetValues(0.8f, 1, 55f, 2, true, true, AnisotropicFiltering.Enable, 0, 2048),
         };
 
         public static QualityPreset Preset
@@ -152,6 +153,7 @@ namespace Saltline.Settings
                 urp.msaaSampleCount = v.Msaa;
                 urp.shadowDistance = v.ShadowDistance;
                 urp.shadowCascadeCount = v.Cascades;
+                urp.mainLightShadowmapResolution = v.ShadowResolution;
                 urp.supportsHDR = v.Hdr;
             }
             QualitySettings.anisotropicFiltering = v.Aniso;

@@ -20,3 +20,14 @@ MonoBehaviour:
   tracer: {fileID: 2100000, guid: a65938c2c7fa44d89ac60c8efbae2944, type: 2}
   impact: {fileID: 2100000, guid: bccdf5c38c81e43a8bbfeb4e91e00fc5, type: 2}
   muzzleFlash: {fileID: 2100000, guid: f1a892afa2ee94d369cb2e2065a34cd7, type: 2}
+  weaponModels:
+  - {fileID: 919132149155446097, guid: e602add411ee64ced877ae0632239fc7, type: 3}
+  - {fileID: 919132149155446097, guid: a08a4b260fb024495a83367b58a15750, type: 3}
+  - {fileID: 919132149155446097, guid: e9b4aa7dc32d54686852482f1f363fc1, type: 3}
+  - {fileID: 919132149155446097, guid: 23d1b8cc13f0b4f988f291a569d5751f, type: 3}
+  - {fileID: 919132149155446097, guid: aadad3147430241b3a3d682e49466f69, type: 3}
+  weapons: {fileID: 11400000, guid: ad9f6e18416b546beafd665a5483860c, type: 2}
+  operatorPrefab: {fileID: 7083739152487294333, guid: 3f33088e1a6364cbb97ac78f69b9a5de, type: 3}
+  operatorTeamRed: {fileID: 2100000, guid: 878466bf5cc7d4009a6900ff185d6d49, type: 2}
+  operatorTeamBlue: {fileID: 2100000, guid: 455e7acf74a4147ef94144e9ee209a95, type: 2}
+  operatorTeamNeutral: {fileID: 2100000, guid: 5dadeba944d834a5b9ea9477d72ba73a, type: 2}

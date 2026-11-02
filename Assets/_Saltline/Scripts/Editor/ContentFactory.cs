@@ -46,6 +46,8 @@ namespace Saltline.EditorTools
             config.weapons = db;
             EditorUtility.SetDirty(config);
             var lib = BuildPresentation();
+            lib.weapons = db;
+            EditorUtility.SetDirty(lib);
             AssetDatabase.SaveAssets();
 
             BuildPlayerPrefab(config);
@@ -202,6 +204,8 @@ namespace Saltline.EditorTools
             lib.tracer = Unlit("Tracer", new Color(4f, 2.6f, 1.2f, 1f), null, additive: true);
             lib.muzzleFlash = Unlit("MuzzleFlash", new Color(3f, 2f, 0.9f, 1f), radial, additive: true);
             lib.impact = Unlit("Impact", new Color(0.05f, 0.05f, 0.05f, 0.85f), radial, additive: false);
+            WeaponArtFactory.Build(lib);
+            CharacterArtFactory.Build(lib);
             EditorUtility.SetDirty(lib);
             return lib;
         }

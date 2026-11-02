@@ -1,6 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using Saltline.Combat;
 using Saltline.Match;
 using Saltline.Net;
@@ -9,6 +12,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace Saltline.EditorTools
 {
@@ -22,27 +27,52 @@ namespace Saltline.EditorTools
         public const string MapDir = ContentFactory.ArtDir + "/Maps/Kappa";
         public const string FbxPath = MapDir + "/Kappa.fbx";
         public const string TexDir = MapDir + "/Textures";
+        /// <summary>CC0 Poly Haven scans converted by ArtSource/Textures/import_cc0.py: _D albedo, _N normal, _M mask (R metal, G AO, A smoothness).</summary>
+        public const string CC0Dir = MapDir + "/TexturesCC0";
+        /// <summary>CC0 Poly Haven sky with its sun taken out (ArtSource/Blender/sky_remove_sun.py); the Sun light replaces it.</summary>
+        public const string SkyPath = ContentFactory.ArtDir + "/Sky/Sky_Kloofendal48d_NoSun_4k.hdr";
+        const string LightingPath = MapDir + "/Lighting_Kappa.lighting";
+        const string HashPath = MapDir + "/Kappa.scenehash";
+
+        /// <summary>
+        /// Bump whenever this factory changes what the scene contains or how it bakes (import settings,
+        /// lights, probes, bake settings). The scene and its lightmaps are only rebuilt when this or the
+        /// FBX changes, because a bake takes minutes; materials are refreshed on every run.
+        /// </summary>
+        const int SceneVersion = 4;
+
+        /// <summary>The HDRI's sun (brightest pixel: u, and v from the bottom), measured by sky_remove_sun.py.</summary>
+        static readonly Vector2 SkySunUV = new(0.59509f, 0.76587f);
+        /// <summary>Sun heading: late in the day, from over the sea. Its elevation comes from the HDRI.</summary>
+        const float SunYaw = 32f;
+        static float SunElevation => 90f - (1f - SkySunUV.y) * 180f;
+        static Quaternion SunRotation => Quaternion.Euler(SunElevation, SunYaw, 0f);
         public const string MatDir = MapDir + "/Materials";
         public const string ScenePath = BootSceneFactory.ScenesDir + "/Kappa.unity";
 
-        /// <summary>Material name -> (texture, tint, smoothness, metallic, surface, penetration cost).</summary>
+        /// <summary>
+        /// Material name -> (texture, tint, smoothness, metallic, surface, penetration cost).
+        /// When a CC0 scan of that texture exists, metallic and smoothness come from its mask and
+        /// "smoothness" here scales the mask's smoothness.
+        /// </summary>
         static readonly Dictionary<string, (string tex, Color tint, float smooth, float metal, SurfaceType surface, float cost)> Mats = new()
         {
-            ["M_Asphalt"] = ("Asphalt", Color.white, 0.55f, 0f, SurfaceType.Concrete, 0f),
-            ["M_Concrete"] = ("Concrete", Color.white, 0.45f, 0f, SurfaceType.Concrete, 0f),
-            ["M_ConcreteFloor"] = ("ConcreteFloor", Color.white, 0.55f, 0f, SurfaceType.Concrete, 0f),
-            ["M_Facade"] = ("Facade", Color.white, 0.6f, 0f, SurfaceType.Concrete, 0f),
-            ["M_Salt"] = ("Salt", Color.white, 0.5f, 0f, SurfaceType.Dirt, 0f),
+            ["M_Asphalt"] = ("Asphalt", Color.white, 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Concrete"] = ("Concrete", new Color(0.93f, 0.97f, 1.04f), 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_ConcreteFloor"] = ("ConcreteFloor", Color.white, 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Facade"] = ("Facade", Color.white, 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Salt"] = ("Salt", Color.white, 1f, 0f, SurfaceType.Dirt, 0f),
             ["M_Sacks"] = ("Sacks", Color.white, 0.4f, 0f, SurfaceType.Dirt, 0f),
-            ["M_Metal"] = ("Metal", Color.white, 0.75f, 0.45f, SurfaceType.Metal, 0f),
-            ["M_Plate"] = ("Metal", new Color(1.45f, 1.38f, 1.25f), 0.7f, 0.45f, SurfaceType.ThinMetal, 0.6f),
-            ["M_Grate"] = ("Grate", Color.white, 0.7f, 0.6f, SurfaceType.Metal, 0f),
-            ["M_TankPaint"] = ("TankPaint", Color.white, 0.7f, 0.1f, SurfaceType.Metal, 0f),
-            ["M_Rust"] = ("Rust", Color.white, 0.6f, 0.3f, SurfaceType.Metal, 0f),
-            ["M_Corrugated"] = ("Corrugated", Color.white, 0.7f, 0.35f, SurfaceType.ThinMetal, 0.6f),
-            ["M_Container"] = ("Container", Color.white, 0.6f, 0.25f, SurfaceType.Metal, 0f),
-            ["M_Wood"] = ("Wood", Color.white, 0.5f, 0f, SurfaceType.Wood, 0.35f),
-            ["M_Rock"] = ("Rock", Color.white, 0.45f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Metal"] = ("Metal", Color.white, 1f, 0.45f, SurfaceType.Metal, 0f),
+            ["M_Plate"] = ("Metal", new Color(1.45f, 1.38f, 1.25f), 1f, 0.45f, SurfaceType.ThinMetal, 0.6f),
+            ["M_Grate"] = ("Grate", Color.white, 1f, 0.6f, SurfaceType.Metal, 0f),
+            ["M_TankPaint"] = ("TankPaint", Color.white, 1f, 0.1f, SurfaceType.Metal, 0f),
+            ["M_Rust"] = ("Rust", Color.white, 1f, 0.3f, SurfaceType.Metal, 0f),
+            ["M_Corrugated"] = ("Corrugated", Color.white, 1f, 0.35f, SurfaceType.ThinMetal, 0.6f),
+            ["M_Container"] = ("Container", Color.white, 1f, 0.25f, SurfaceType.Metal, 0f),
+            ["M_Wood"] = ("Wood", Color.white, 1f, 0f, SurfaceType.Wood, 0.35f),
+            ["M_Rock"] = ("Rock", Color.white, 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Ground"] = ("Ground", Color.white, 1f, 0f, SurfaceType.Dirt, 0f),
             ["M_Hazard"] = ("Hazard", Color.white, 0.6f, 0f, SurfaceType.Metal, 0f),
             ["M_PaintYellow"] = ("Paint", new Color(0.86f, 0.62f, 0.1f), 0.6f, 0.1f, SurfaceType.Metal, 0f),
             ["M_PaintRed"] = ("Paint", new Color(0.72f, 0.13f, 0.09f), 0.5f, 0f, SurfaceType.Concrete, 0f),
@@ -65,34 +95,83 @@ namespace Saltline.EditorTools
             Directory.CreateDirectory(MatDir);
             ConfigureTextures();
             var materials = BuildMaterials();
+
+            string hash = InputHash();
+            bool force = Environment.GetCommandLineArgs().Contains("-rebuildkappa");
+            if (!force && File.Exists(ScenePath) && File.Exists(HashPath) && File.ReadAllText(HashPath).Trim() == hash && HasBake())
+            {
+                Debug.Log("[SALTLINE] Kappa scene and bake are up to date (FBX and scene version unchanged); materials refreshed. Pass -rebuildkappa to force.");
+                return;
+            }
             ConfigureModel(materials);
-            BuildScene();
+            if (BuildScene()) File.WriteAllText(HashPath, hash + "\n");
+        }
+
+        static string InputHash()
+        {
+            using var sha = SHA1.Create();
+            var fbx = File.ReadAllBytes(FbxPath);
+            var tag = System.Text.Encoding.UTF8.GetBytes($"v{SceneVersion}|sky {new FileInfo(SkyPath).Length}");
+            sha.TransformBlock(fbx, 0, fbx.Length, null, 0);
+            sha.TransformFinalBlock(tag, 0, tag.Length);
+            return BitConverter.ToString(sha.Hash).Replace("-", "").ToLowerInvariant();
+        }
+
+        static bool HasBake()
+        {
+            string dir = Path.Combine(Path.GetDirectoryName(ScenePath), Path.GetFileNameWithoutExtension(ScenePath));
+            return File.Exists(Path.Combine(dir, "LightingData.asset")) && Directory.GetFiles(dir, "Lightmap-*_comp_light.exr").Length > 0;
         }
 
         // ------------------------------------------------------------------ assets
 
         static void ConfigureTextures()
         {
-            foreach (string path in Directory.GetFiles(TexDir, "T_*.png"))
+            var files = Directory.GetFiles(TexDir, "T_*.png").Select(p => (p, 1024))
+                .Concat(Directory.Exists(CC0Dir) ? Directory.GetFiles(CC0Dir, "T_*.*").Where(p => !p.EndsWith(".meta")).Select(p => (p, 2048)) : Enumerable.Empty<(string, int)>());
+            foreach (var (path, maxSize) in files)
             {
                 string p = path.Replace('\\', '/');
                 var ti = (TextureImporter)AssetImporter.GetAtPath(p);
                 if (ti == null) { AssetDatabase.ImportAsset(p); ti = (TextureImporter)AssetImporter.GetAtPath(p); }
-                bool normal = p.EndsWith("_N.png");
+                string stem = Path.GetFileNameWithoutExtension(p);
+                bool normal = stem.EndsWith("_N");
+                bool mask = stem.EndsWith("_M");
                 bool changed = false;
-                void Set<T>(T current, T wanted, System.Action<T> apply) { if (!EqualityComparer<T>.Default.Equals(current, wanted)) { apply(wanted); changed = true; } }
+                void Set<T>(T current, T wanted, Action<T> apply) { if (!EqualityComparer<T>.Default.Equals(current, wanted)) { apply(wanted); changed = true; } }
                 Set(ti.textureType, normal ? TextureImporterType.NormalMap : TextureImporterType.Default, v => ti.textureType = v);
-                Set(ti.sRGBTexture, !normal, v => ti.sRGBTexture = v);
+                Set(ti.sRGBTexture, !normal && !mask, v => ti.sRGBTexture = v);
                 Set(ti.alphaIsTransparency, false, v => ti.alphaIsTransparency = v);
                 Set(ti.mipmapEnabled, true, v => ti.mipmapEnabled = v);
                 Set(ti.anisoLevel, 8, v => ti.anisoLevel = v);
                 Set(ti.filterMode, FilterMode.Trilinear, v => ti.filterMode = v);
                 Set(ti.wrapMode, TextureWrapMode.Repeat, v => ti.wrapMode = v);
-                Set(ti.maxTextureSize, 1024, v => ti.maxTextureSize = v);
+                Set(ti.maxTextureSize, maxSize, v => ti.maxTextureSize = v);
                 Set(ti.textureCompression, TextureImporterCompression.CompressedHQ, v => ti.textureCompression = v);
+                Set(ti.streamingMipmaps, false, v => ti.streamingMipmaps = v);
                 if (changed) ti.SaveAndReimport();
             }
+
+            // Sky: equirectangular HDR sampled by Skybox/Panoramic. No mips (they show a seam where u wraps).
+            var sky = (TextureImporter)AssetImporter.GetAtPath(SkyPath);
+            if (sky != null)
+            {
+                bool changed = false;
+                void Set<T>(T current, T wanted, Action<T> apply) { if (!EqualityComparer<T>.Default.Equals(current, wanted)) { apply(wanted); changed = true; } }
+                Set(sky.textureType, TextureImporterType.Default, v => sky.textureType = v);
+                Set(sky.textureShape, TextureImporterShape.Texture2D, v => sky.textureShape = v);
+                Set(sky.mipmapEnabled, false, v => sky.mipmapEnabled = v);
+                Set(sky.wrapModeU, TextureWrapMode.Repeat, v => sky.wrapModeU = v);
+                Set(sky.wrapModeV, TextureWrapMode.Clamp, v => sky.wrapModeV = v);
+                Set(sky.filterMode, FilterMode.Bilinear, v => sky.filterMode = v);
+                Set(sky.maxTextureSize, 4096, v => sky.maxTextureSize = v);
+                Set(sky.textureCompression, TextureImporterCompression.CompressedHQ, v => sky.textureCompression = v);
+                if (changed) sky.SaveAndReimport();
+            }
         }
+
+        static Texture2D Cc0(string tex, string suffix, string ext) =>
+            tex == null ? null : AssetDatabase.LoadAssetAtPath<Texture2D>($"{CC0Dir}/T_{tex}_{suffix}.{ext}");
 
         static Dictionary<string, Material> BuildMaterials()
         {
@@ -111,12 +190,28 @@ namespace Saltline.EditorTools
                 m.SetColor("_BaseColor", spec.tint);
                 m.SetFloat("_Smoothness", spec.smooth);
                 m.SetFloat("_Metallic", spec.metal);
-                var albedo = spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_D.png") : null;
-                var normal = spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_N.png") : null;
+                var scanAlbedo = Cc0(spec.tex, "D", "jpg");
+                var scanNormal = Cc0(spec.tex, "N", "jpg");
+                var scanMask = Cc0(spec.tex, "M", "png");
+                bool scanned = scanAlbedo != null && scanNormal != null && scanMask != null;
+                var albedo = scanned ? scanAlbedo : spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_D.png") : null;
+                var normal = scanned ? scanNormal : spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_N.png") : null;
                 m.SetTexture("_BaseMap", albedo);
                 m.SetTexture("_MainTex", albedo);
-                // Smoothness comes from the albedo alpha (rust is rough, paint and puddles are not).
-                if (albedo != null)
+                // Scanned sets: metallic (R), occlusion (G) and smoothness (A) come from the mask, and
+                // _Smoothness scales the mask's smoothness.
+                m.SetTexture("_MetallicGlossMap", scanned ? scanMask : null);
+                m.SetTexture("_OcclusionMap", scanned ? scanMask : null);
+                m.SetFloat("_OcclusionStrength", 1f);
+                if (scanned) { m.EnableKeyword("_METALLICSPECGLOSSMAP"); m.EnableKeyword("_OCCLUSIONMAP"); }
+                else { m.DisableKeyword("_METALLICSPECGLOSSMAP"); m.DisableKeyword("_OCCLUSIONMAP"); }
+                if (scanned)
+                {
+                    m.SetFloat("_SmoothnessTextureChannel", 0f);
+                    m.DisableKeyword("_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A");
+                }
+                // Generated sets: smoothness comes from the albedo alpha (rust is rough, paint and puddles are not).
+                else if (albedo != null)
                 {
                     m.SetFloat("_SmoothnessTextureChannel", 1f);
                     m.EnableKeyword("_SMOOTHNESS_TEXTURE_ALBEDO_CHANNEL_A");
@@ -167,7 +262,11 @@ namespace Saltline.EditorTools
             mi.meshCompression = ModelImporterMeshCompression.Off;
             mi.importNormals = ModelImporterNormals.Import;
             mi.importTangents = ModelImporterTangents.CalculateMikk;
-            mi.generateSecondaryUV = false;
+            // Lightmap UVs, with UV-chart margins worked out for the bake resolution below.
+            mi.generateSecondaryUV = true;
+            mi.secondaryUVMarginMethod = ModelImporterSecondaryUVMarginMethod.Calculate;
+            mi.secondaryUVMinLightmapResolution = LightmapTexelsPerMetre;
+            mi.secondaryUVMinObjectScale = FarLightmapScale;
             mi.addCollider = false;
             mi.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             mi.materialLocation = ModelImporterMaterialLocation.InPrefab;
@@ -178,7 +277,7 @@ namespace Saltline.EditorTools
 
         // ------------------------------------------------------------------ scene
 
-        static void BuildScene()
+        static bool BuildScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -191,7 +290,7 @@ namespace Saltline.EditorTools
             // so an exporter axis change cannot silently mirror the spawns or capture views.
             var red0 = root.transform.Find("SPAWN_RED_00");
             var lamp0 = root.transform.Find("LIGHT_00");
-            if (red0 == null || lamp0 == null) { Debug.LogError("[SALTLINE] Kappa.fbx is missing its markers."); return; }
+            if (red0 == null || lamp0 == null) { Debug.LogError("[SALTLINE] Kappa.fbx is missing its markers."); return false; }
             float sx = Mathf.Sign(red0.position.x / -50f);
             float sz = Mathf.Sign(lamp0.position.z / 32.5f);
             Vector3 B(float x, float y, float z) => new Vector3(sx * x, z, sz * y);
@@ -228,10 +327,13 @@ namespace Saltline.EditorTools
                 {
                     var l = new GameObject(n).AddComponent<Light>();
                     l.type = LightType.Point;
-                    l.range = 9f;
-                    l.intensity = 2.2f;
+                    l.range = 14f;
+                    l.intensity = 6f;
                     l.color = new Color(1f, 0.84f, 0.62f);
-                    l.shadows = LightShadows.None;
+                    // Baked: lamps light the lightmaps and light probes, with soft shadows, at no runtime cost.
+                    l.lightmapBakeType = LightmapBakeType.Baked;
+                    l.shadows = LightShadows.Soft;
+                    l.shadowRadius = 0.15f;
                     l.transform.SetParent(lightRoot, false);
                     l.transform.position = t.position;
                     Object.DestroyImmediate(go);
@@ -241,8 +343,9 @@ namespace Saltline.EditorTools
                 var mr = go.GetComponent<MeshRenderer>();
                 var mf = go.GetComponent<MeshFilter>();
                 go.layer = Layers.Environment;
-                GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ReflectionProbeStatic);
+                GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ReflectionProbeStatic | StaticEditorFlags.ContributeGI);
                 if (mr == null || mf == null) continue;
+                ConfigureGI(go, mr);
 
                 if (n.EndsWith("__PC"))
                 {
@@ -272,36 +375,185 @@ namespace Saltline.EditorTools
             }
 
             BuildLighting();
+            BuildLightProbes();
+            BuildReflectionProbes(B);
             BuildCameras(B);
             AddCaptureViews(B);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[SALTLINE] Kappa scene: {colliders} collidable, {clips} clips, {decor} decor, {spawns} spawns, {lights} lamps -> {ScenePath}");
+            bool baked = Bake();
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            return baked;
+        }
+
+        // ------------------------------------------------------------------ global illumination
+
+        /// <summary>Lightmap texels per metre at scale 1.</summary>
+        const float LightmapTexelsPerMetre = 4f;
+        /// <summary>Lightmap scale for the backdrop (hillside, cliff, warehouses): seen from far away only.</summary>
+        const float FarLightmapScale = 0.15f;
+
+        /// <summary>
+        /// Large surfaces get lightmaps (baked bounce light and ambient occlusion). Thin or small things
+        /// (rails, pipes, wheels, posts) are lit from light probes instead: lightmaps on them would cost
+        /// space and show seams. The sea takes no part in the bake.
+        /// </summary>
+        static void ConfigureGI(GameObject go, MeshRenderer mr)
+        {
+            string n = go.name;
+            // The sea is huge and flat; the lamp heads are emissive glass with no UVs. Neither helps the bake.
+            if (n.StartsWith("Sea__") || n.StartsWith("Lamps"))
+            {
+                GameObjectUtility.SetStaticEditorFlags(go, GameObjectUtility.GetStaticEditorFlags(go) & ~StaticEditorFlags.ContributeGI);
+                mr.receiveGI = ReceiveGI.LightProbes;
+                return;
+            }
+            string[] probeLit = { "Rail", "Pipe", "Bands", "Beams", "Rollers", "_AC_", "Flywheel", "Scoop", "Trim", "Door", "Lamps",
+                                  "Wheels", "LampPosts", "Bollards", "Barrels", "Tracks", "Legs", "Cols", "Columns", "Pillars", "Saddles", "Crane_Boom" };
+            bool probes = probeLit.Any(n.Contains);
+            if (n.EndsWith("__NC") && !(n.Contains("Brine") || n.Contains("Yard_Paint") || n.Contains("RoadMarks") || n.Contains("Dock_Edge"))) probes = true;
+            if (probes)
+            {
+                mr.receiveGI = ReceiveGI.LightProbes;
+                mr.lightProbeUsage = LightProbeUsage.BlendProbes;
+                return;
+            }
+            mr.receiveGI = ReceiveGI.Lightmaps;
+            mr.scaleInLightmap = n.EndsWith("__FAR") ? FarLightmapScale : 1f;
+            mr.stitchLightmapSeams = true;
+        }
+
+        static LightingSettings LightingAsset()
+        {
+            var ls = AssetDatabase.LoadAssetAtPath<LightingSettings>(LightingPath);
+            if (ls == null)
+            {
+                ls = new LightingSettings { name = "Lighting_Kappa" };
+                AssetDatabase.CreateAsset(ls, LightingPath);
+            }
+            ls.autoGenerate = false;
+            ls.bakedGI = true;
+            ls.realtimeGI = false;
+            // Shadowmask: the sun stays realtime (shadows on players), the bake adds bounce light and
+            // a shadow mask that keeps distant buildings shadowed beyond the realtime shadow distance.
+            ls.mixedBakeMode = MixedLightingMode.Shadowmask;
+            ls.lightmapper = LightingSettings.Lightmapper.ProgressiveGPU;
+            ls.lightmapResolution = LightmapTexelsPerMetre;
+            ls.lightmapMaxSize = 2048;
+            ls.lightmapPadding = 4;
+            ls.lightmapCompression = LightmapCompression.HighQuality;
+            ls.directionalityMode = LightmapsMode.CombinedDirectional;
+            ls.ao = true;
+            ls.aoMaxDistance = 1.5f;
+            ls.aoExponentIndirect = 1f;
+            ls.aoExponentDirect = 0f;
+            ls.directSampleCount = 32;
+            ls.indirectSampleCount = 256;
+            ls.environmentSampleCount = 256;
+            ls.maxBounces = 3;
+            ls.filteringMode = LightingSettings.FilterMode.Auto;
+            EditorUtility.SetDirty(ls);
+            return ls;
+        }
+
+        /// <summary>Probe columns on a 3 m grid over the playable area, at every floor with headroom.</summary>
+        static void BuildLightProbes()
+        {
+            Physics.SyncTransforms();
+            int mask = 1 << Layers.Environment;
+            var positions = new List<Vector3>();
+            for (float x = -60f; x <= 60.01f; x += 3f)
+            for (float z = -39f; z <= 39.01f; z += 3f)
+            {
+                var hits = Physics.RaycastAll(new Vector3(x, 40f, z), Vector3.down, 60f, mask, QueryTriggerInteraction.Ignore);
+                foreach (var h in hits)
+                {
+                    if (h.normal.y < 0.6f) continue;
+                    float clear = Physics.Raycast(h.point + Vector3.up * 0.05f, Vector3.up, out var up, 30f, mask, QueryTriggerInteraction.Ignore) ? up.distance : 30f;
+                    if (clear < 1.2f) continue;
+                    positions.Add(h.point + Vector3.up * 0.6f);
+                    if (clear > 2.6f) positions.Add(h.point + Vector3.up * 2.2f);
+                    if (clear > 7f) positions.Add(h.point + Vector3.up * 5.5f);
+                }
+            }
+            var group = new GameObject("LightProbes").AddComponent<LightProbeGroup>();
+            group.probePositions = positions.ToArray();
+            Debug.Log($"[SALTLINE] Kappa: {positions.Count} light probes");
+        }
+
+        /// <summary>Baked reflection probes: a grid outdoors, and a box-projected probe in each interior.</summary>
+        static void BuildReflectionProbes(Func<float, float, float, Vector3> B)
+        {
+            var root = new GameObject("ReflectionProbes").transform;
+            void Probe(string name, Vector3 centre, Vector3 blenderSize, bool interior)
+            {
+                var p = new GameObject("RP_" + name).AddComponent<ReflectionProbe>();
+                p.transform.SetParent(root, false);
+                p.transform.position = centre;
+                p.mode = ReflectionProbeMode.Baked;
+                p.size = new Vector3(blenderSize.x, blenderSize.z, blenderSize.y);
+                p.boxProjection = interior;
+                p.blendDistance = interior ? 0.6f : 4f;
+                p.importance = interior ? 2 : 1;
+                p.resolution = 128;
+                p.hdr = true;
+                p.nearClipPlane = 0.1f;
+                p.farClipPlane = 600f;
+            }
+            foreach (float x in new[] { -43.5f, -14.5f, 14.5f, 43.5f })
+            foreach (float y in new[] { -18f, 18f })
+                Probe($"Outdoor_{x:F0}_{y:F0}", B(x, y, 2.5f), new Vector3(37f, 44f, 24f), false);
+            Probe("Pump_Ground", B(0f, 0f, 1.75f), new Vector3(15.2f, 13.2f, 3.4f), true);
+            Probe("Pump_Upper", B(0f, 0f, 5.4f), new Vector3(15.2f, 13.2f, 3.4f), true);
+            Probe("Pump_Annex", B(0f, 8f, 1.5f), new Vector3(6f, 2f, 3f), true);
+            Probe("Hut", B(0f, 32.5f, 4.3f), new Vector3(5f, 4f, 2.6f), true);
+            Probe("ControlRoom", B(0f, -13.8f, 1.7f), new Vector3(9f, 4.4f, 3.4f), true);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                string s = side < 0 ? "W" : "E";
+                Probe("Shed_" + s, B(side * 20f, -18f, 2.75f), new Vector3(12f, 14f, 5.5f), true);
+                Probe("PumpShed_" + s, B(side * 31f, 30.75f, 1.8f), new Vector3(5f, 5.5f, 3.6f), true);
+                Probe("Weighbridge_" + s, B(side * 50f, -19.5f, 1.6f), new Vector3(6f, 5f, 3.2f), true);
+            }
+        }
+
+        static bool Bake()
+        {
+            Lightmapping.lightingSettings = LightingAsset();
+            var sw = Stopwatch.StartNew();
+            bool ok = Lightmapping.Bake();
+            int probes = LightmapSettings.lightProbes != null ? LightmapSettings.lightProbes.count : 0;
+            if (ok) Debug.Log($"[SALTLINE] Kappa bake done in {sw.Elapsed.TotalSeconds:F0} s: {LightmapSettings.lightmaps.Length} lightmaps, {probes} light probes");
+            else Debug.LogError($"[SALTLINE] Kappa bake FAILED after {sw.Elapsed.TotalSeconds:F0} s");
+            return ok;
         }
 
         static void BuildLighting()
         {
+            // The sun sits where the HDRI's sun was, so shadows agree with the sky's lighting.
             var sun = new GameObject("Sun").AddComponent<Light>();
             sun.type = LightType.Directional;
-            sun.intensity = 1.7f;
-            sun.color = new Color(1f, 0.92f, 0.8f);
+            sun.intensity = 1.6f;
+            sun.color = new Color(1f, 0.94f, 0.86f);
             sun.shadows = LightShadows.Soft;
-            sun.shadowStrength = 0.92f;
-            sun.transform.rotation = Quaternion.Euler(36f, 32f, 0f); // late afternoon, from over the sea
+            sun.shadowStrength = 1f;
+            sun.lightmapBakeType = LightmapBakeType.Mixed;
+            sun.shadowAngle = 1.2f; // softness of the baked (shadowmask) shadows
+            sun.transform.rotation = SunRotation;
             RenderSettings.sun = sun;
 
             RenderSettings.skybox = SkyMaterial();
-            RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.56f, 0.64f, 0.74f);
-            RenderSettings.ambientEquatorColor = new Color(0.5f, 0.49f, 0.46f);
-            RenderSettings.ambientGroundColor = new Color(0.24f, 0.22f, 0.2f);
-            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Custom;
-            RenderSettings.customReflectionTexture = ReflectionCubemap();
-            RenderSettings.reflectionIntensity = 0.9f;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+            RenderSettings.ambientIntensity = 1f;
+            RenderSettings.defaultReflectionMode = DefaultReflectionMode.Skybox;
+            RenderSettings.defaultReflectionResolution = 256;
+            RenderSettings.reflectionIntensity = 1f;
+            RenderSettings.reflectionBounces = 1;
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogDensity = 0.0042f;
-            RenderSettings.fogColor = new Color(0.71f, 0.77f, 0.83f);
+            RenderSettings.fogColor = new Color(0.70f, 0.73f, 0.79f); // the HDRI's horizon
 
             var volGo = new GameObject("PostProcess");
             var vol = volGo.AddComponent<Volume>();
@@ -312,66 +564,42 @@ namespace Saltline.EditorTools
         static Material SkyMaterial()
         {
             string path = MapDir + "/Sky_Kappa.mat";
+            var shader = Shader.Find("Skybox/Panoramic");
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null)
             {
-                m = new Material(Shader.Find("Skybox/Procedural"));
+                m = new Material(shader);
                 AssetDatabase.CreateAsset(m, path);
             }
-            m.SetFloat("_SunDisk", 2f);
-            m.SetFloat("_SunSize", 0.035f);
-            m.SetFloat("_SunSizeConvergence", 6f);
-            m.SetFloat("_AtmosphereThickness", 0.85f);
-            m.SetColor("_SkyTint", new Color(0.5f, 0.56f, 0.64f));
-            m.SetColor("_GroundColor", new Color(0.33f, 0.38f, 0.43f));
-            m.SetFloat("_Exposure", 1.25f);
+            m.shader = shader;
+            m.SetTexture("_MainTex", AssetDatabase.LoadAssetAtPath<Texture2D>(SkyPath));
+            m.SetFloat("_Mapping", 1f); // latitude-longitude
+            m.EnableKeyword("_MAPPING_LATITUDE_LONGITUDE_LAYOUT");
+            m.DisableKeyword("_MAPPING_6_FRAMES_LAYOUT");
+            m.SetFloat("_ImageType", 0f); // 360 degrees
+            m.SetFloat("_MirrorOnBack", 0f);
+            m.SetFloat("_Layout", 0f);
+            m.SetColor("_Tint", new Color(0.5f, 0.5f, 0.5f, 0.5f));
+            m.SetFloat("_Exposure", 1f);
+            m.SetFloat("_Rotation", SkyRotation());
             EditorUtility.SetDirty(m);
+
+            string oldCube = MapDir + "/Reflection_Kappa.asset"; // replaced by the baked sky reflection
+            if (AssetDatabase.LoadAssetAtPath<Cubemap>(oldCube) != null) AssetDatabase.DeleteAsset(oldCube);
             return m;
         }
 
-        /// <summary>Small sky-gradient cubemap so metal and water reflect a sky without a lighting bake.</summary>
-        static Cubemap ReflectionCubemap()
+        /// <summary>
+        /// Skybox/Panoramic samples u = 0.5 - (atan2(z, x) - _Rotation) / 2pi. The sign was measured, not
+        /// read from the shader: a render looking straight at the Sun light matched the HDRI (0.99
+        /// correlation) only with this sign. Pick the turn that puts the HDRI's sun behind the Sun light.
+        /// </summary>
+        static float SkyRotation()
         {
-            string path = MapDir + "/Reflection_Kappa.asset";
-            var existing = AssetDatabase.LoadAssetAtPath<Cubemap>(path);
-            const int size = 64;
-            var cube = new Cubemap(size, TextureFormat.RGBA32, true);
-            Color zenith = new Color(0.36f, 0.5f, 0.68f), horizon = new Color(0.74f, 0.79f, 0.84f), ground = new Color(0.3f, 0.29f, 0.27f);
-            Vector3 sunDir = -(Quaternion.Euler(36f, 32f, 0f) * Vector3.forward);
-            foreach (CubemapFace face in new[] { CubemapFace.PositiveX, CubemapFace.NegativeX, CubemapFace.PositiveY, CubemapFace.NegativeY, CubemapFace.PositiveZ, CubemapFace.NegativeZ })
-            {
-                var px = new Color[size * size];
-                for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float s = (x + 0.5f) / size * 2f - 1f, t = (y + 0.5f) / size * 2f - 1f;
-                    Vector3 d = face switch
-                    {
-                        CubemapFace.PositiveX => new Vector3(1, -t, -s),
-                        CubemapFace.NegativeX => new Vector3(-1, -t, s),
-                        CubemapFace.PositiveY => new Vector3(s, 1, t),
-                        CubemapFace.NegativeY => new Vector3(s, -1, -t),
-                        CubemapFace.PositiveZ => new Vector3(s, -t, 1),
-                        _ => new Vector3(-s, -t, -1),
-                    };
-                    d.Normalize();
-                    Color c = d.y >= 0f ? Color.Lerp(horizon, zenith, Mathf.Pow(d.y, 0.6f)) : Color.Lerp(horizon, ground, Mathf.Pow(-d.y, 0.35f));
-                    float sunAmt = Mathf.Pow(Mathf.Max(0f, Vector3.Dot(d, sunDir)), 64f);
-                    c += new Color(1f, 0.9f, 0.75f) * sunAmt * 2.5f;
-                    px[y * size + x] = c;
-                }
-                cube.SetPixels(px, face);
-            }
-            cube.Apply(true);
-            if (existing != null)
-            {
-                EditorUtility.CopySerialized(cube, existing); // keep the GUID stable across rebuilds
-                Object.DestroyImmediate(cube);
-                EditorUtility.SetDirty(existing);
-                return existing;
-            }
-            AssetDatabase.CreateAsset(cube, path);
-            return cube;
+            Vector3 toSun = -(SunRotation * Vector3.forward);
+            float wanted = Mathf.Atan2(toSun.z, toSun.x) * Mathf.Rad2Deg;
+            float inImage = (0.5f - SkySunUV.x) * 360f;
+            return Mathf.Repeat(wanted - inImage, 360f);
         }
 
         static VolumeProfile PostProfile()
@@ -458,6 +686,8 @@ namespace Saltline.EditorTools
             View("14_north_staging", B(-52f, 18f, eye), B(-28f, 31f, 2.5f));
             View("15_hut_window", B(0f, 31.3f, 3.0f + eye), B(0f, 8f, 1.5f));
             View("16_topdown", B(0f, 0f, 150f), B(0f, 0.01f, 0f), ortho: 40f);
+            var eyeMid = B(0f, -25f, 30f);
+            View("17_sun_check", eyeMid, eyeMid - SunRotation * Vector3.forward * 10f);
         }
     }
 }
