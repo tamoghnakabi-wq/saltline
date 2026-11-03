@@ -12,6 +12,12 @@ namespace Saltline.Core
         /// <summary>Semantic game version shown in menus, release names and the update check.</summary>
         public const string Version = "0.1.0";
         public const int NetProtocol = 4; // 3: match flow (MatchDirector on the session object); 4: ShotFx.PelletHits
+
+        /// <summary>
+        /// The release site's version.json, read by <see cref="UpdateCheck"/> on launch. Empty until the site
+        /// is published (the check then does nothing); must be https. See docs/DISTRIBUTION.md.
+        /// </summary>
+        public const string UpdateManifestUrl = "";
         public const string SessionType = "saltline_tdm";
         public const int MaxPlayers = 8;
         public const int MaxPerTeam = 4;

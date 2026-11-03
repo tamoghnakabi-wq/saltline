@@ -17,8 +17,11 @@ namespace Saltline.UI
 
         TextField m_Name, m_SessionName, m_Code;
         Button m_NavHost, m_NavJoin, m_NavBrowse, m_Public, m_Private;
-        VisualElement m_HostCard, m_JoinCard, m_BrowseCard, m_BrowseList;
-        Label m_HostError, m_JoinError, m_BrowseStatus, m_Footer;
+        VisualElement m_HostCard, m_JoinCard, m_BrowseCard, m_BrowseList, m_UpdateCard;
+        Label m_HostError, m_JoinError, m_BrowseStatus, m_Footer, m_UpdateTitle, m_UpdateText;
+        Button m_UpdateDownload;
+        IVisualElementScheduledItem m_Poll;
+        UpdateCheck.Status m_ShownUpdate = UpdateCheck.Status.NotStarted;
         DropdownField m_Map;
         bool m_IsPrivate;
         Tab m_Tab = Tab.Host;
@@ -59,6 +62,7 @@ namespace Saltline.UI
 
             left.Add(Ui.Div("spacer"));
             m_Footer = left.Put(Ui.Text("", "menu-footer"));
+            m_Footer.name = "menuFooter";
 
             // ---- right column: the selected card
             var right = root.Put(Ui.Div("menu-right", "col"));
@@ -66,6 +70,7 @@ namespace Saltline.UI
             m_HostCard = right.Put(BuildHostCard());
             m_JoinCard = right.Put(BuildJoinCard());
             m_BrowseCard = right.Put(BuildBrowseCard());
+            m_UpdateCard = right.Put(BuildUpdateCard());
             Select(Tab.Host);
             return root;
         }
@@ -148,6 +153,47 @@ namespace Saltline.UI
             return card;
         }
 
+        /// <summary>Shown instead of the cards when this build is too old to play online.</summary>
+        VisualElement BuildUpdateCard()
+        {
+            var card = Ui.Div("panel", "menu-card", "col", "update-card");
+            card.name = "updateCard";
+            card.Add(Ui.Text("UPDATE REQUIRED", "eyebrow"));
+            m_UpdateTitle = card.Put(Ui.Text("A NEW VERSION IS OUT", "title"));
+            m_UpdateText = card.Put(Ui.Text("", "dim", "wrap"));
+            m_UpdateDownload = card.Put(Ui.Button("DOWNLOAD", OpenDownload, "btn--primary", "mt-24"));
+            m_UpdateDownload.name = "updateDownload";
+            card.Add(Ui.Text($"This is version {BuildInfo.Version}, network protocol {BuildInfo.NetProtocol}. Settings and Quit still work.",
+                "dim", "small", "wrap", "mt-16"));
+            card.Show(false);
+            return card;
+        }
+
+        static void OpenDownload()
+        {
+            string url = UpdateCheck.Current.DownloadUrl;
+            if (!string.IsNullOrEmpty(url) && url.StartsWith("https://", System.StringComparison.OrdinalIgnoreCase)) Application.OpenURL(url);
+        }
+
+        /// <summary>Applies the update check's answer: blocks Host, Join and Browse when an update is required.</summary>
+        void ApplyUpdateState()
+        {
+            var u = UpdateCheck.Current;
+            m_ShownUpdate = u.Status;
+            bool blocked = UpdateCheck.Blocking;
+            m_NavHost.SetEnabled(!blocked);
+            m_NavJoin.SetEnabled(!blocked);
+            m_NavBrowse.SetEnabled(!blocked);
+            if (blocked)
+            {
+                m_UpdateTitle.text = string.IsNullOrEmpty(u.Latest) ? "A NEW VERSION IS OUT" : $"SALTLINE {u.Latest} IS OUT";
+                m_UpdateText.text = u.Message;
+                m_UpdateDownload.Show(!string.IsNullOrEmpty(u.DownloadUrl));
+            }
+            ShowCards();
+            UpdateFooter();
+        }
+
         void SetPrivate(bool p)
         {
             m_IsPrivate = p;
@@ -158,13 +204,20 @@ namespace Saltline.UI
         void Select(Tab t)
         {
             m_Tab = t;
-            m_HostCard.Show(t == Tab.Host);
-            m_JoinCard.Show(t == Tab.Join);
-            m_BrowseCard.Show(t == Tab.Browse);
-            m_NavHost.EnableInClassList("nav-btn--active", t == Tab.Host);
-            m_NavJoin.EnableInClassList("nav-btn--active", t == Tab.Join);
-            m_NavBrowse.EnableInClassList("nav-btn--active", t == Tab.Browse);
-            if (t == Tab.Browse) Refresh();
+            ShowCards();
+            if (t == Tab.Browse && !UpdateCheck.Blocking) Refresh();
+        }
+
+        void ShowCards()
+        {
+            bool blocked = UpdateCheck.Blocking;
+            m_HostCard.Show(!blocked && m_Tab == Tab.Host);
+            m_JoinCard.Show(!blocked && m_Tab == Tab.Join);
+            m_BrowseCard.Show(!blocked && m_Tab == Tab.Browse);
+            m_UpdateCard.Show(blocked);
+            m_NavHost.EnableInClassList("nav-btn--active", !blocked && m_Tab == Tab.Host);
+            m_NavJoin.EnableInClassList("nav-btn--active", !blocked && m_Tab == Tab.Join);
+            m_NavBrowse.EnableInClassList("nav-btn--active", !blocked && m_Tab == Tab.Browse);
         }
 
         void UpdateFooter()
@@ -172,6 +225,14 @@ namespace Saltline.UI
             string text = $"v{BuildInfo.Version}  ·  protocol {BuildInfo.NetProtocol}  ·  {Ui.PlatformTag(PlayerRecord.LocalPlatform())}";
             if (Saltline.Settings.ShaderWarmup.Slow)
                 text += $"  ·  preparing shaders for this machine {Mathf.RoundToInt(Saltline.Settings.ShaderWarmup.Progress * 100f)}%";
+            var u = UpdateCheck.Current;
+            switch (u.Status)
+            {
+                case UpdateCheck.Status.Checking: text += "  ·  checking for updates"; break;
+                case UpdateCheck.Status.UpdateAvailable: text += $"  ·  version {u.Latest} is available"; break;
+                case UpdateCheck.Status.UpdateRequired: text += "  ·  update required"; break;
+                case UpdateCheck.Status.Failed: text += "  ·  could not check for updates"; break;
+            }
             m_Footer.text = text;
         }
 
@@ -180,24 +241,28 @@ namespace Saltline.UI
             m_Name.SetValueWithoutNotify(Callsign);
             m_HostError.text = "";
             m_JoinError.text = "";
-            UpdateFooter();
+            ApplyUpdateState();
             // On the first launch on a machine the shaders are compiled while the menu is up, which
-            // makes it stutter for a few seconds: say so until it is done.
-            if (!Saltline.Settings.ShaderWarmup.Done)
+            // makes it stutter for a few seconds: say so until it is done. The update check also
+            // answers after the menu is up.
+            if (!Saltline.Settings.ShaderWarmup.Done || UpdateCheck.Pending)
             {
-                IVisualElementScheduledItem poll = null;
-                poll = m_Footer.schedule.Execute(() =>
-                {
-                    UpdateFooter();   // runs once more after the warm-up ends, to clear the note
-                    if (Saltline.Settings.ShaderWarmup.Done) poll.Pause();
-                }).Every(200);
+                if (m_Poll == null)
+                    m_Poll = m_Footer.schedule.Execute(() =>
+                    {
+                        // runs once more after both are done, to clear the notes
+                        if (UpdateCheck.Current.Status != m_ShownUpdate) ApplyUpdateState();
+                        else UpdateFooter();
+                        if (Saltline.Settings.ShaderWarmup.Done && !UpdateCheck.Pending) m_Poll.Pause();
+                    }).Every(200);
+                else m_Poll.Resume();
             }
             if (!string.IsNullOrEmpty(GameBootstrap.PendingNotice))
             {
                 Host.Alert("MATCH ENDED", GameBootstrap.PendingNotice);
                 GameBootstrap.PendingNotice = null;
             }
-            if (m_Tab == Tab.Browse) Refresh();
+            if (m_Tab == Tab.Browse && !UpdateCheck.Blocking) Refresh();
         }
 
         string MapIdFromChoice()

@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+/* The game's own UI palette (Assets/_Saltline/UI/Saltline.uss), so the site and the menu look like one thing. */
+@theme {
+  --color-ink: #090b0f;
+  --color-panel: #0f1319;
+  --color-panel-2: #161c24;
+  --color-line: rgb(255 255 255 / 0.09);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+  --color-fg: #e9edf1;
+  --color-dim: #a0a9b4;
+  --color-faint: #6b7480;
+  --color-accent: #f29a2e;
+  --color-accent-hover: #ffb254;
+  --color-red: #e84c50;
+  --color-blue: #4692f7;
+  --color-ok: #4ec58c;
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-roboto-mono), ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgb(242 154 46 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Reusable classes. Declared as utilities so they can build on each other with @apply. */
+@utility eyebrow {
+  @apply font-mono text-xs font-bold uppercase tracking-[0.18em] text-accent;
+}
+
+@utility h2 {
+  @apply text-3xl font-black uppercase tracking-tight text-fg sm:text-4xl;
+}
+
+@utility lead {
+  @apply text-lg leading-relaxed text-dim;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-bold uppercase tracking-wider transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-ink hover:bg-accent-hover;
+}
+
+@utility btn-ghost {
+  @apply btn border border-line-strong text-fg hover:bg-white/5;
+}
+
+@utility card {
+  @apply rounded-lg border border-line bg-panel;
+}
+
+@utility code {
+  @apply rounded-md border border-line bg-black/40 px-3 py-2 font-mono text-[13px] leading-relaxed text-fg;
+}

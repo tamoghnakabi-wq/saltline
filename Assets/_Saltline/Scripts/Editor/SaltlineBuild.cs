@@ -64,6 +64,24 @@ namespace Saltline.EditorTools
             string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
+            // Read the source state before building: the build itself can touch tracked files.
+            string stampPath = StampPath(target, path);
+            if (File.Exists(stampPath)) File.Delete(stampPath);
+            string commit = Git("rev-parse HEAD");
+            string status = Git("status --porcelain");
+            var stamp = new BuildStamp
+            {
+                game = BuildInfo.GameName,
+                version = BuildInfo.Version,
+                protocol = BuildInfo.NetProtocol,
+                target = target == BuildTarget.StandaloneOSX ? "macos-arm64" : "windows-x64",
+                development = dev,
+                commit = commit ?? "",
+                dirty = commit == null || status == null || status.Length > 0,
+                updateUrl = BuildInfo.UpdateManifestUrl,
+                unity = Application.unityVersion,
+            };
+
             var options = new BuildPlayerOptions
             {
                 scenes = scenes,
@@ -77,7 +95,60 @@ namespace Saltline.EditorTools
             BuildReport report = BuildPipeline.BuildPlayer(options);
             var s = report.summary;
             Debug.Log($"[SALTLINE] Build {target}: {s.result}, {s.totalSize / (1024f * 1024f):F1} MB, {s.totalTime.TotalSeconds:F0}s, errors={s.totalErrors}, warnings={s.totalWarnings}");
-            return s.result == BuildResult.Succeeded;
+            if (s.result != BuildResult.Succeeded) return false;
+
+            stamp.built = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
+            File.WriteAllText(stampPath, JsonUtility.ToJson(stamp, true) + "\n");
+            Debug.Log($"[SALTLINE] Wrote {stampPath} (commit {stamp.commit}, dirty={stamp.dirty})");
+            return true;
+        }
+
+        /// <summary>What a build was made from. Tools/package_release.py refuses builds that don't match the release.</summary>
+        [Serializable]
+        sealed class BuildStamp
+        {
+            public string game, version;
+            public int protocol;
+            public string target;
+            public bool development;
+            public string commit;
+            public bool dirty;
+            public string built, updateUrl, unity;
+        }
+
+        /// <summary>Builds/macOS/SALTLINE.buildinfo.json, or Builds/Windows/SALTLINE.buildinfo.json (beside the game folder).</summary>
+        static string StampPath(BuildTarget target, string path)
+        {
+            string dir = Path.GetDirectoryName(path)!;
+            if (target != BuildTarget.StandaloneOSX) dir = Path.GetDirectoryName(dir)!;
+            return Path.Combine(dir, "SALTLINE.buildinfo.json");
+        }
+
+        /// <summary>Runs git in the project folder; null if git is missing or fails.</summary>
+        static string Git(string args)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("git", args)
+                {
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    WorkingDirectory = Directory.GetCurrentDirectory(),
+                };
+                using var p = System.Diagnostics.Process.Start(psi);
+                if (p == null) return null;
+                string output = p.StandardOutput.ReadToEnd();
+                p.StandardError.ReadToEnd();
+                p.WaitForExit();
+                return p.ExitCode == 0 ? output.Trim() : null;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[SALTLINE] git {args} failed: {e.Message}");
+                return null;
+            }
         }
 
         /// <summary>Sets OSXStandalone.UserBuildSettings.architecture by name (API type varies by version).</summary>

@@ -31,8 +31,15 @@ namespace Saltline.Net
         public static event Action<string> SessionLost;
         public static event Action<ISession> SessionStarted;
 
+        /// <summary>Refuses online actions when the update check says this build is too old to play online.</summary>
+        static void EnsureUpToDate()
+        {
+            if (UpdateCheck.Blocking) throw new UpdateRequiredException(UpdateCheck.Current.Message);
+        }
+
         public static async Task<ISession> HostAsync(HostSettings settings)
         {
+            EnsureUpToDate();
             await UgsAuth.EnsureSignedInAsync();
             await LeaveAsync();
 
@@ -72,6 +79,7 @@ namespace Saltline.Net
             code = (code ?? "").Trim().ToUpperInvariant();
             if (code.Length < 4) throw new ArgumentException("Enter a valid join code.");
 
+            EnsureUpToDate();
             await UgsAuth.EnsureSignedInAsync();
             await LeaveAsync();
             var nm = RequireNetworkManager();
@@ -86,6 +94,7 @@ namespace Saltline.Net
 
         public static async Task<ISession> JoinByIdAsync(string sessionId, string playerName, string password = null)
         {
+            EnsureUpToDate();
             await UgsAuth.EnsureSignedInAsync();
             await LeaveAsync();
             var nm = RequireNetworkManager();
@@ -100,6 +109,7 @@ namespace Saltline.Net
         /// <summary>Public, unlocked, version-compatible sessions with free slots.</summary>
         public static async Task<IList<ISessionInfo>> BrowseAsync()
         {
+            EnsureUpToDate();
             await UgsAuth.EnsureSignedInAsync();
             var query = new QuerySessionsOptions
             {
@@ -237,7 +247,7 @@ namespace Saltline.Net
                         return $"Session error: {se.Error} — {m}";
                 }
             }
-            if (e is ArgumentException) return e.Message;
+            if (e is ArgumentException || e is UpdateRequiredException) return e.Message;
             return UgsAuth.Describe(e);
         }
     }

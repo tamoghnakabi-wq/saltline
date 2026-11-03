@@ -1,0 +1,6 @@
+# The site is built by Vercel from a plain clone, which does not fetch Git LFS files by default,
+# so nothing under Web/ goes to LFS.
+*.png -filter -diff -merge binary
+*.jpg -filter -diff -merge binary
+*.webp binary
+*.woff2 binary

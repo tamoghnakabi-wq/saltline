@@ -212,12 +212,18 @@ namespace Saltline.Diagnostics
             for (int i = 0; i < n; i++) yield return null;
         }
 
+        /// <summary>A material the scene uses, by exact name, else the first whose name starts with it.</summary>
         static Material SceneMaterial(string name)
         {
+            Material byPrefix = null;
             foreach (var r in FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
                 foreach (var m in r.sharedMaterials)
-                    if (m != null && m.name == name) return m;
-            return null;
+                {
+                    if (m == null) continue;
+                    if (m.name == name) return m;
+                    if (byPrefix == null && m.name.StartsWith(name, System.StringComparison.Ordinal)) byPrefix = m;
+                }
+            return byPrefix;
         }
 
         IEnumerator FxShowcase(Camera cam, Transform views, ExposureAdaptation adapt, string dir, RenderTexture rt, Texture2D tex)
@@ -252,7 +258,7 @@ namespace Saltline.Diagnostics
             // Test panels: the map's own materials and surface types.
             var panels = new (string mat, SurfaceType surface, string label)[]
             {
-                ("M_Concrete", SurfaceType.Concrete, "concrete"), ("M_Container", SurfaceType.Metal, "metal"),
+                ("M_Concrete", SurfaceType.Concrete, "concrete"), ("M_Metal", SurfaceType.Metal, "metal"),
                 ("M_Wood", SurfaceType.Wood, "wood"), ("M_Salt", SurfaceType.Dirt, "ground"),
             };
             var made = new GameObject("FxPanels");
@@ -268,6 +274,7 @@ namespace Saltline.Diagnostics
                 go.transform.localScale = new Vector3(1.25f, 1.5f, 0.2f);
                 var m = SceneMaterial(panels[i].mat);
                 if (m != null) go.GetComponent<MeshRenderer>().sharedMaterial = m;
+                else { go.GetComponent<MeshRenderer>().sharedMaterial = SceneMaterial("M_Concrete"); Debug.LogWarning($"[SALTLINE] MapTour: the scene has no {panels[i].mat} material."); }
                 go.AddComponent<SurfaceTag>().surface = panels[i].surface;
             }
             Physics.SyncTransforms();

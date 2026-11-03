@@ -31,6 +31,8 @@ crashlytics-build.properties
 # Local test output
 /TestResults/
 /AutoTest/
+# Packaged release files (uploaded to GitHub Releases, not committed)
+/Release/
 
 # Adobe Mixamo source clips: licensed for use in the game, not for redistribution as files (see ATTRIBUTIONS.md)
 /Assets/_Saltline/Art/Characters/Mixamo/*.fbx

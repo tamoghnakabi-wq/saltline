@@ -171,6 +171,7 @@
 
 .sl-root .nav-btn:hover { color: var(--text); background-color: rgba(255, 255, 255, 0.04); translate: 4px 0; }
 .sl-root .nav-btn--active { color: var(--text); border-color: var(--accent); background-color: rgba(242, 154, 46, 0.08); }
+.sl-root .nav-btn:disabled { opacity: 0.3; }
 
 .field-label {
     font-size: 13px;

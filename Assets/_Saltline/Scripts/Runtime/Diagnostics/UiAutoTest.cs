@@ -47,6 +47,7 @@ namespace Saltline.Diagnostics
                 return Fail("main menu did not appear in the menu scene");
             SetupCapture();
             await WaitSeconds(1f);
+            if (Role == "update") return await RunUpdate();
 
             // ---- main menu
             await Shot("01_menu_host");
@@ -194,6 +195,52 @@ namespace Saltline.Diagnostics
             }
             Note($"ui: pressed {what}");
             await WaitSeconds(0.25f);
+            return true;
+        }
+
+        // ================================================================== update check
+
+        /// <summary>
+        /// -uitest update [-updateurl file:///…/version.json] [-expectupdate UpdateRequired]: waits for the
+        /// update check, captures the menu, and checks that online play is blocked exactly when an update
+        /// is required (the buttons, and the session calls behind them).
+        /// </summary>
+        async Task<bool> RunUpdate()
+        {
+            if (!await WaitUntil(() => !UpdateCheck.Pending, 15)) return Fail("the update check did not finish");
+            await WaitSeconds(0.6f);
+            var u = UpdateCheck.Current;
+            Result["updateStatus"] = u.Status.ToString();
+            Result["updateLatest"] = u.Latest ?? "";
+            Result["updateDownload"] = u.DownloadUrl ?? "";
+            await Shot("01_menu_update_" + u.Status.ToString().ToLowerInvariant());
+            Result["footer"] = Root.Q<Label>("menuFooter")?.text ?? "";
+
+            string expect = CommandLine.Get("expectupdate", "");
+            if (expect != "" && !string.Equals(expect, u.Status.ToString(), System.StringComparison.OrdinalIgnoreCase))
+                return Fail($"the update check said {u.Status}, expected {expect}");
+
+            var host = Root.Query<Button>().Where(b => b.text == "HOST MATCH").First();
+            var card = Root.Q("updateCard");
+            if (host == null || card == null) return Fail("main menu has no HOST MATCH button or update panel");
+            Result["hostEnabled"] = host.enabledInHierarchy.ToString();
+            Result["updatePanelShown"] = Shown(card).ToString();
+            if (UpdateCheck.Blocking)
+            {
+                if (host.enabledInHierarchy) return Fail("HOST MATCH stayed enabled although an update is required");
+                if (!Shown(card)) return Fail("the update panel is hidden although an update is required");
+                try { await SessionService.HostAsync(new HostSettings { PlayerName = "UiHost" }); return Fail("hosting went ahead although an update is required"); }
+                catch (UpdateRequiredException e) { Result["hostRefused"] = e.Message; }
+                try { await SessionService.BrowseAsync(); return Fail("browsing went ahead although an update is required"); }
+                catch (UpdateRequiredException) { Result["browseRefused"] = "True"; }
+                try { await SessionService.JoinByCodeAsync("ABCDEF", "UiHost"); return Fail("joining went ahead although an update is required"); }
+                catch (UpdateRequiredException) { Result["joinRefused"] = "True"; }
+            }
+            else
+            {
+                if (!host.enabledInHierarchy) return Fail("HOST MATCH is disabled although no update is required");
+                if (Shown(card)) return Fail("the update panel is shown although no update is required");
+            }
             return true;
         }
 

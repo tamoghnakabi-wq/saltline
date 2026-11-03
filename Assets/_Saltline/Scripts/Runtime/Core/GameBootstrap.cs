@@ -72,7 +72,11 @@ namespace Saltline.Core
             // -benchmark measures frame times on a map in a window, per quality preset, and quits.
             if (CommandLine.Has("benchmark")) { gameObject.AddComponent<Benchmark>(); return; }
             // The menu UI exists whenever something is rendered (and not under a headless test).
-            if (RunMode.Presentation && !CommandLine.Has("autotest")) UiRoot.Ensure();
+            if (RunMode.Presentation && !CommandLine.Has("autotest"))
+            {
+                UiRoot.Ensure();
+                UpdateCheck.Begin(this);
+            }
 
             if (CommandLine.Has("autotest"))
             {
