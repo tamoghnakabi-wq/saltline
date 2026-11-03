@@ -39,7 +39,7 @@ namespace Saltline.EditorTools
         /// lights, probes, bake settings). The scene and its lightmaps are only rebuilt when this or the
         /// FBX changes, because a bake takes minutes; materials are refreshed on every run.
         /// </summary>
-        const int SceneVersion = 4;
+        const int SceneVersion = 5;
 
         /// <summary>The HDRI's sun (brightest pixel: u, and v from the bottom), measured by sky_remove_sun.py.</summary>
         static readonly Vector2 SkySunUV = new(0.59509f, 0.76587f);
@@ -82,7 +82,35 @@ namespace Saltline.EditorTools
             ["M_Sea"] = ("Water", new Color(0.05f, 0.15f, 0.2f), 0.93f, 0f, SurfaceType.Water, 0f),
             ["M_Lamp"] = (null, new Color(1f, 0.86f, 0.62f), 0.5f, 0f, SurfaceType.Glass, 0.05f),
             ["M_Clip"] = (null, Color.magenta, 0f, 0f, SurfaceType.Concrete, 0f),
+            // Detail pass (kappa_props.py).
+            // The scan is yellowish (linear mean 0.27, 0.24, 0.16); the tint brings it back to a neutral grey.
+            ["M_ConcreteCast"] = ("ConcreteSmooth", new Color(0.95f, 0.99f, 1.12f), 1f, 0f, SurfaceType.Concrete, 0f),
+            ["M_Shutter"] = ("Shutter", Color.white, 1f, 0.3f, SurfaceType.ThinMetal, 0.6f),
+            // ContainerPaint is a grey copy of the container scan (mean linear albedo 0.5); the tint is the paint.
+            ["M_ContainerRed"] = ("ContainerPaint", new Color(0.80f, 0.33f, 0.27f), 1f, 0.25f, SurfaceType.Metal, 0f),
+            ["M_ContainerBlue"] = ("ContainerPaint", new Color(0.40f, 0.55f, 0.75f), 1f, 0.25f, SurfaceType.Metal, 0f),
+            ["M_ContainerWhite"] = ("ContainerPaint", new Color(1f, 1f, 0.97f), 1f, 0.25f, SurfaceType.Metal, 0f),
+            ["M_ContainerGreen"] = ("ContainerPaint", new Color(0.48f, 0.63f, 0.47f), 1f, 0.25f, SurfaceType.Metal, 0f),
+            ["M_ContainerOrange"] = ("ContainerPaint", new Color(0.95f, 0.58f, 0.30f), 1f, 0.25f, SurfaceType.Metal, 0f),
+            // Window glass over a dark interior. Partly metallic so the sky and buildings show in it; plain 4%
+            // dielectric reflection read as flat black panes in the captures.
+            ["M_Glass"] = (null, new Color(0.16f, 0.19f, 0.21f), 0.95f, 0.5f, SurfaceType.Glass, 0.05f),
+            ["M_Rubber"] = ("Paint", new Color(0.24f, 0.24f, 0.24f), 0.35f, 0f, SurfaceType.Plastic, 0f),
+            ["M_PaintWhite"] = ("Paint", new Color(0.82f, 0.82f, 0.80f), 0.6f, 0.1f, SurfaceType.Metal, 0f),
+            ["M_PaintGrey"] = ("Paint", new Color(0.34f, 0.36f, 0.37f), 0.55f, 0.1f, SurfaceType.Metal, 0f),
+            ["M_PaintOrange"] = ("Paint", new Color(0.90f, 0.35f, 0.06f), 0.5f, 0f, SurfaceType.Plastic, 0f),
+            ["M_DrumBlue"] = ("Paint", new Color(0.10f, 0.24f, 0.48f), 0.55f, 0.1f, SurfaceType.Metal, 0f),
+            ["M_Plastic"] = ("Paint", new Color(0.86f, 0.86f, 0.82f), 0.5f, 0f, SurfaceType.Plastic, 0f),
+            ["M_Bag"] = ("Bag", Color.white, 1f, 0f, SurfaceType.Dirt, 0f),
+            // Wet patches: about half the asphalt's albedo (linear 0.12), mirror-smooth.
+            ["M_Puddle"] = ("Water", new Color(0.25f, 0.26f, 0.27f), 0.95f, 0f, SurfaceType.Water, 0f),
         };
+
+        /// <summary>
+        /// Scans whose normal and mask maps are shared with another scan: the painted containers use
+        /// the original container scan's relief and mask, with their own grey albedo.
+        /// </summary>
+        static readonly Dictionary<string, string> SharedScanMaps = new() { ["ContainerPaint"] = "Container" };
 
         [MenuItem("Saltline/Build/Kappa Scene")]
         public static void Build()
@@ -191,8 +219,9 @@ namespace Saltline.EditorTools
                 m.SetFloat("_Smoothness", spec.smooth);
                 m.SetFloat("_Metallic", spec.metal);
                 var scanAlbedo = Cc0(spec.tex, "D", "jpg");
-                var scanNormal = Cc0(spec.tex, "N", "jpg");
-                var scanMask = Cc0(spec.tex, "M", "png");
+                string mapTex = spec.tex != null && SharedScanMaps.TryGetValue(spec.tex, out var shared) ? shared : spec.tex;
+                var scanNormal = Cc0(mapTex, "N", "jpg");
+                var scanMask = Cc0(mapTex, "M", "png");
                 bool scanned = scanAlbedo != null && scanNormal != null && scanMask != null;
                 var albedo = scanned ? scanAlbedo : spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_D.png") : null;
                 var normal = scanned ? scanNormal : spec.tex != null ? AssetDatabase.LoadAssetAtPath<Texture2D>($"{TexDir}/T_{spec.tex}_N.png") : null;
@@ -224,7 +253,7 @@ namespace Saltline.EditorTools
                 if (normal != null)
                 {
                     m.SetTexture("_BumpMap", normal);
-                    m.SetFloat("_BumpScale", name == "M_Sea" ? 0.35f : 1f);
+                    m.SetFloat("_BumpScale", name == "M_Sea" ? 0.35f : name == "M_Puddle" ? 0.2f : 1f);
                     m.EnableKeyword("_NORMALMAP");
                 }
                 else
@@ -236,7 +265,7 @@ namespace Saltline.EditorTools
                 {
                     m.SetColor("_EmissionColor", spec.tint * 6f);
                     m.EnableKeyword("_EMISSION");
-                    m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+                    m.globalIlluminationFlags = LampGIFlags;
                 }
                 m.enableInstancing = true;
                 EditorUtility.SetDirty(m);
@@ -383,6 +412,7 @@ namespace Saltline.EditorTools
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[SALTLINE] Kappa scene: {colliders} collidable, {clips} clips, {decor} decor, {spawns} spawns, {lights} lamps -> {ScenePath}");
             bool baked = Bake();
+            EnsureLampEmission();
             EditorSceneManager.SaveScene(scene, ScenePath);
             return baked;
         }
@@ -410,9 +440,14 @@ namespace Saltline.EditorTools
                 return;
             }
             string[] probeLit = { "Rail", "Pipe", "Bands", "Beams", "Rollers", "_AC_", "Flywheel", "Scoop", "Trim", "Door", "Lamps",
-                                  "Wheels", "LampPosts", "Bollards", "Barrels", "Tracks", "Legs", "Cols", "Columns", "Pillars", "Saddles", "Crane_Boom" };
+                                  "Wheels", "LampPosts", "Bollards", "Barrels", "Tracks", "Legs", "Cols", "Columns", "Pillars", "Saddles", "Crane_Boom",
+                                  // detail pass: vehicle parts, small props, pallets, thin trims
+                                  "Tyres", "Chassis", "Bumper", "Truck_Tank", "Harvester_Glass", "Manway", "IBC", "CableDrum", "Pallet",
+                                  "Guides", "Coil", "ShutterPosts", "Coping" };
             bool probes = probeLit.Any(n.Contains);
-            if (n.EndsWith("__NC") && !(n.Contains("Brine") || n.Contains("Yard_Paint") || n.Contains("RoadMarks") || n.Contains("Dock_Edge"))) probes = true;
+            // Decals lying on lightmapped surfaces keep lightmaps so they match what is under them.
+            string[] lightmappedDecals = { "Brine", "Yard_Paint", "RoadMarks", "Dock_Edge", "Puddles", "Weighbridge_Plate_", "ParkingLines", "Hatch" };
+            if (n.EndsWith("__NC") && !lightmappedDecals.Any(n.Contains)) probes = true;
             if (probes)
             {
                 mr.receiveGI = ReceiveGI.LightProbes;
@@ -522,11 +557,44 @@ namespace Saltline.EditorTools
         {
             Lightmapping.lightingSettings = LightingAsset();
             var sw = Stopwatch.StartNew();
-            bool ok = Lightmapping.Bake();
+            // Unity cannot lay out lightmap UVs for some meshes made of many tiny pieces spread over a wide
+            // area (pallet slats, fence pales, drain grates, bag loops) and leaves them out of the bake with a
+            // warning each. They are all probe-lit details: they keep probe lighting and realtime sun shadows
+            // (distance shadowmask), but do not block baked lamp light. Count them for the summary.
+            int leftOut = 0;
+            void OnLog(string msg, string _, LogType __) { if (msg.Contains("Invalid Mesh was removed from light baking input")) leftOut++; }
+            Application.logMessageReceived += OnLog;
+            bool ok;
+            try { ok = Lightmapping.Bake(); }
+            finally { Application.logMessageReceived -= OnLog; }
             int probes = LightmapSettings.lightProbes != null ? LightmapSettings.lightProbes.count : 0;
-            if (ok) Debug.Log($"[SALTLINE] Kappa bake done in {sw.Elapsed.TotalSeconds:F0} s: {LightmapSettings.lightmaps.Length} lightmaps, {probes} light probes");
+            if (ok) Debug.Log($"[SALTLINE] Kappa bake done in {sw.Elapsed.TotalSeconds:F0} s: {LightmapSettings.lightmaps.Length} lightmaps, {probes} light probes; " +
+                                $"{leftOut} small probe-lit meshes left out by Unity (no usable lightmap UVs)");
             else Debug.LogError($"[SALTLINE] Kappa bake FAILED after {sw.Elapsed.TotalSeconds:F0} s");
             return ok;
+        }
+
+        /// <summary>
+        /// "Realtime" emission, as the URP material inspector sets it. With no GI flag (None) Unity's material
+        /// validation dropped the _EMISSION keyword whenever the baked Kappa scene was loaded (the bake, the
+        /// tests), and the lamps rendered unlit. The project has no realtime GI, and the lamp renderers take no
+        /// part in the bake, so the flag changes nothing else.
+        /// </summary>
+        const MaterialGlobalIlluminationFlags LampGIFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+
+        /// <summary>
+        /// Makes sure the lamp panels glow: called after the bake and before every player build.
+        /// KappaMapTests.OnlyLampsAreEmissive checks it too.
+        /// </summary>
+        public static void EnsureLampEmission()
+        {
+            var m = AssetDatabase.LoadAssetAtPath<Material>($"{MatDir}/M_Lamp.mat");
+            if (m == null || (m.IsKeywordEnabled("_EMISSION") && m.globalIlluminationFlags == LampGIFlags)) return;
+            Debug.Log($"[SALTLINE] Kappa: M_Lamp emission was off (keyword {m.IsKeywordEnabled("_EMISSION")}, GI {m.globalIlluminationFlags}); enabling it.");
+            m.EnableKeyword("_EMISSION");
+            m.globalIlluminationFlags = LampGIFlags;
+            EditorUtility.SetDirty(m);
+            AssetDatabase.SaveAssets();
         }
 
         static void BuildLighting()
@@ -686,6 +754,13 @@ namespace Saltline.EditorTools
             View("14_north_staging", B(-52f, 18f, eye), B(-28f, 31f, 2.5f));
             View("15_hut_window", B(0f, 31.3f, 3.0f + eye), B(0f, 8f, 1.5f));
             View("16_topdown", B(0f, 0f, 150f), B(0f, 0.01f, 0f), ortho: 40f);
+            // Close-ups of the set dressing, for reviewing materials and lighting on the props.
+            View("18_detail_truck", B(-25f, 17f, eye), B(-31f, 10f, 1.6f));
+            View("19_detail_container", B(-25.5f, -4f, eye), B(-30.7f, -10.4f, 1.3f));
+            View("20_detail_harvester", B(-6.5f, 18.5f, eye), B(-11.7f, 14.6f, 1.6f));
+            View("21_detail_office", B(-30f, -3f, eye), B(-41f, 2f, 3.5f));
+            View("22_detail_dump_truck", B(-43f, -24.5f, eye), B(-49f, -29.4f, 1.5f));
+            View("23_detail_shutter", B(-46f, 22f, eye), B(-57.7f, 24f, 4f));
             var eyeMid = B(0f, -25f, 30f);
             View("17_sun_check", eyeMid, eyeMid - SunRotation * Vector3.forward * 10f);
         }

@@ -7,7 +7,9 @@ No assets were taken from commercial games.
 
 - **Code:** all C# under `Assets/_Saltline/Scripts`, and the tools under `Tools/` and `ArtSource/`.
 - **Kappa Saltworks map:** modelled in Blender from `ArtSource/Blender/kappa_build.py`.
-- **Generated textures:** sacks, hazard stripes, paint, water and the Arena textures, made from seeded noise by `ArtSource/Textures/gen_kappa_textures.py`.
+- **Kappa props:** containers, trucks, the salt harvester, bulk bags, pallets, IBC tanks, drums, lamps, windows,
+  doors, shutters and the other set dressing, modelled from `ArtSource/Blender/kappa_props.py`.
+- **Generated textures:** sacks, woven bulk bags, hazard stripes, paint, water and the Arena textures, made from seeded noise by `ArtSource/Textures/gen_kappa_textures.py`.
 - **Sound effects:** synthesised by `ArtSource/Audio/gen_sfx.py`.
 - **Weapons:** original designs, modelled in Blender from `ArtSource/Blender/weapons_build.py` (none copies a real firearm). Their textures are baked by `ArtSource/Blender/weapons_lib.py`.
 - **Operator character:** original design (no real unit, insignia or commercial character), modelled, rigged, skinned and baked in Blender from `ArtSource/Blender/operator_build.py`. Its rig uses Mixamo-compatible bone names so it can be set up as a Unity Humanoid.
@@ -52,6 +54,7 @@ Where the Changes column gives a brightness, the albedo was rescaled so its aver
 | `T_Corrugated_*` | [corrugated_iron_02](https://polyhaven.com/a/corrugated_iron_02) | Jenelle van Heerden, Sergej Majboroda | 2.7 m | Albedo brightness 0.16. |
 | `T_CorrugatedRust_*` | [rusty_corrugated_iron](https://polyhaven.com/a/rusty_corrugated_iron) | Charlotte Baglioni | 2.0 m | Albedo brightness 0.10. |
 | `T_Container_*` | [container_side](https://polyhaven.com/a/container_side) | Dimitrios Savva | 1.94 m | |
+| `T_ContainerPaint_D` | [container_side](https://polyhaven.com/a/container_side) | Dimitrios Savva | 1.94 m | Albedo only, made neutral grey (linear brightness 0.5) by `ArtSource/Textures/derive_container_paint.py`, so each container's material sets its paint colour. It uses `T_Container_N` and `T_Container_M`. |
 | `T_Wood_*` | [weathered_planks](https://polyhaven.com/a/weathered_planks) | Dario Barresi, Dimitrios Savva | 2.0 m | Albedo brightness 0.16. |
 | `T_Rock_*` | [rock_face](https://polyhaven.com/a/rock_face) | Dario Barresi, Greg Zaal | 2.38 m | Albedo brightness 0.14. |
 | `T_Ground_*` | [dry_ground_rocks](https://polyhaven.com/a/dry_ground_rocks) | Rob Tuytel | 4.0 m | Saturation reduced to 70%. |

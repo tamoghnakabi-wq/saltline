@@ -59,6 +59,7 @@ namespace Saltline.EditorTools
             if (dev) path = path.Replace("Builds/macOS/", "Builds/macOS-dev/").Replace("Builds/Windows/", "Builds/Windows-dev/");
 
             BootSceneFactory.EnsureBuildScenes();
+            KappaSceneFactory.EnsureLampEmission();
             string[] scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 

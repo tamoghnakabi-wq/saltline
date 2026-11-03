@@ -392,8 +392,26 @@ def paint(n=256):
     save("Paint", alb, w * 0.2 - chip * 0.3, 2.0, smooth_mask=0.5 * (1 - chip))
 
 
+def bag(n=1024):
+    # Woven polypropylene bulk bag (FIBC). Tile = 1 m, so one tape is 6 px = 6 mm wide.
+    p = 6
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float64)
+    iu, iv = np.floor(xx / p), np.floor(yy / p)
+    fu, fv = xx / p - iu, yy / p - iv
+    over = ((iu + iv) % 2) == 0                      # warp over weft on a checkerboard
+    tape = np.where(over, np.sin(np.pi * fu), np.sin(np.pi * fv))
+    h = 0.6 * tape + 0.4 * over
+    tone = fnoise(n, 1.9, 181)
+    dust = smooth(fnoise(n, 1.4, 182), 0.45, 0.9)
+    stain = smooth(fnoise(n, 2.2, 183), 0.62, 0.8)
+    alb = col((0.80, 0.79, 0.74)) * (0.88 + 0.12 * tape[..., None]) * (0.9 + 0.1 * tone[..., None])
+    alb = mix(alb, col((0.62, 0.58, 0.5)), dust * 0.45)
+    alb = mix(alb, col((0.5, 0.45, 0.36)), stain * 0.35)
+    save("Bag", alb, h, 1.5, smooth_mask=0.22 + 0.12 * tape)
+
+
 ALL = [asphalt, concrete_wall, concrete_floor, facade, salt, sacks, painted_metal, grate, tank_paint,
-       rust, corrugated, wood, rock, hazard, container, ripples, paint]
+       rust, corrugated, wood, rock, hazard, container, ripples, paint, bag]
 
 if __name__ == "__main__":
     only = set(sys.argv[1:])

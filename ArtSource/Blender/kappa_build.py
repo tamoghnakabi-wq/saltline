@@ -58,6 +58,23 @@ MATS = {
     "M_Sea": ("Water", (24, 24), (0.06, 0.17, 0.22)),
     "M_Lamp": (None, (1, 1), (1.0, 0.86, 0.62)),
     "M_Clip": (None, (1, 1), (1.0, 0.0, 1.0)),
+    # detail pass (kappa_props.py)
+    "M_ConcreteCast": ("ConcreteSmooth", (2.71, 2.71), (1, 1, 1)),
+    "M_Shutter": ("Shutter", (2, 2), (1, 1, 1)),
+    "M_ContainerRed": ("ContainerPaint", (1.94, 1.94), (0.70, 0.24, 0.17)),
+    "M_ContainerBlue": ("ContainerPaint", (1.94, 1.94), (0.24, 0.38, 0.56)),
+    "M_ContainerWhite": ("ContainerPaint", (1.94, 1.94), (0.86, 0.86, 0.83)),
+    "M_ContainerGreen": ("ContainerPaint", (1.94, 1.94), (0.40, 0.55, 0.38)),
+    "M_ContainerOrange": ("ContainerPaint", (1.94, 1.94), (0.86, 0.47, 0.20)),
+    "M_Glass": (None, (1, 1), (0.05, 0.06, 0.065)),
+    "M_Rubber": ("Paint", (1, 1), (0.07, 0.07, 0.07)),
+    "M_PaintWhite": ("Paint", (2, 2), (0.82, 0.82, 0.80)),
+    "M_PaintGrey": ("Paint", (2, 2), (0.34, 0.36, 0.37)),
+    "M_PaintOrange": ("Paint", (1, 1), (0.90, 0.35, 0.06)),
+    "M_DrumBlue": ("Paint", (1, 1), (0.10, 0.24, 0.48)),
+    "M_Plastic": ("Paint", (1, 1), (0.86, 0.86, 0.82)),
+    "M_Bag": ("Bag", (1.0, 1.0), (1, 1, 1)),
+    "M_Puddle": ("Water", (3, 3), (0.035, 0.04, 0.045)),
 }
 
 KIND_SUFFIX = {"geo": "", "nc": "__NC", "far": "__FAR", "clip": "__PC"}
@@ -319,24 +336,30 @@ def grid_surface(g, nx, ny, fn, want):
 
 # =========================================================================== props
 
+# Detailed generators (containers, trucks, bags, crates, windows ...) live in kappa_props.py.
+exec(compile(open(os.path.join(ROOT, "ArtSource", "Blender", "kappa_props.py")).read(), "kappa_props.py", "exec"), globals())
+
+
 def crate(g, x, y, z, s=1.2, rz=0.0):
-    box(g, (x, y, z + s / 2), (s, s, s), rz=rz, skip=("-z",))
+    framed_crate(g, x, y, z, s, rz)
 
 
 def sacks(g, x0, x1, y0, y1, z0, h):
-    boxr(g, x0, x1, y0, y1, z0, z0 + h, skip=("-z",))
+    """Bulk bags on pallets over the same footprint and height; g only names the groups."""
+    bulk_bags(g.name.replace("Sacks", "Bags"), x0, x1, y0, y1, z0, h)
+
+
+JERSEY = [(-0.3, 0.0), (0.3, 0.0), (0.3, 0.08), (0.2, 0.33), (0.12, 1.1), (-0.12, 1.1), (-0.2, 0.33), (-0.3, 0.08)]
 
 
 def jersey(g, x0, x1, y0, y1):
-    """1.1 m concrete barrier (tapered profile approximated with two boxes)."""
-    along_x = (abs(x1 - x0) > abs(y1 - y0))
-    boxr(g, x0, x1, y0, y1, 0, 0.35, skip=("-z",))
-    if along_x:
-        ym = (y0 + y1) / 2
-        boxr(g, x0, x1, ym - 0.15, ym + 0.15, 0.35, 1.1, skip=("-z",))
+    """1.1 m concrete barrier with the real New Jersey profile."""
+    xa, xb = sorted((x0, x1))
+    ya, yb = sorted((y0, y1))
+    if xb - xa > yb - ya:
+        prism(g, (0, (ya + yb) / 2, 0), EY, EZ, EX, JERSEY, xa, xb, axes=(EX, EY, EZ))
     else:
-        xm = (x0 + x1) / 2
-        boxr(g, xm - 0.15, xm + 0.15, y0, y1, 0.35, 1.1, skip=("-z",))
+        prism(g, ((xa + xb) / 2, 0, 0), EX, EZ, EY, JERSEY, ya, yb, axes=(EX, EY, EZ))
 
 
 def railing(name, p0, p1, z, height=1.05, clip_h=1.45):
@@ -366,6 +389,7 @@ def tank(name, x, y, r, h, plinth=True):
     for zb in (h * 0.33, h * 0.66):
         vcyl(bands, x, y, zb, zb + 0.14, r + 0.035, seg=32, caps=(False, False))
     vcyl(G(name + "_Bands", "M_Metal", "nc"), x, y, h - 0.1, h + 0.02, r + 0.05, seg=32, caps=(False, True))
+    tank_details(name, x, y, r, h)
 
 
 def lamp(i, x, y, z):
@@ -409,10 +433,14 @@ def build_center():
     boxr(G("Pump_Crates", "M_Wood"), -0.7, 0.7, 3.6, 5.0, 0.1, 2.5, skip=("-z",))
     boxr(G("Pump_Annex", "M_Concrete"), -3.0, 3.0, 7.0, 9.0, 0.0, 3.0, skip=("-z",))
     boxr(G("Pump_AnnexDoor", "M_Metal", "nc"), -0.7, 0.7, 9.0, 9.04, 0.0, 2.2)
-    boxr(G("Alcove_Divider", "M_Concrete"), -0.25, 0.25, -11.6, -7.0, 0.0, 3.3, skip=("-z",))
+    boxr(G("Alcove_Divider", "M_ConcreteCast"), -0.25, 0.25, -11.6, -7.0, 0.0, 3.3, skip=("-z",))
+    cop = G("Coping_C", "M_ConcreteCast")
+    coping(cop, "y", -11.6, -7.0, -0.25, 0.25, 3.3)
 
     # ---- north boundary: retaining wall over the full width
     boxr(G("Boundary_North", "M_Concrete"), -58.0, 58.0, 36.0, 37.0, -1.7, 3.0)
+    coping(cop, "x", -58.0, 58.0, 36.0, 37.0, 3.0)
+    palisade(G("Palisade", "M_PaintGrey", "nc"), -57.9, 57.9, 36.5, 3.1)
     boxr(G("Boundary_North_Clip", "M_Clip", "clip"), -58.0, 58.0, 35.75, 36.0, 0.0, 14.0)
     boxr(G("Boundary_South_Clip", "M_Clip", "clip"), -58.0, 58.0, -36.0, -35.75, 0.0, 14.0)
 
@@ -438,6 +466,24 @@ def build_center():
     boxr(G("Control_Room", "M_Facade"), -4.5, 4.5, -16.0, -11.6, 0.0, 3.4, skip=("-z", "+z"))
     boxr(G("Control_Roof", "M_Concrete"), -4.7, 4.7, -16.2, -11.6, 3.4, 3.6)
     boxr(G("Seawall", "M_Concrete"), -14.0, 14.0, -36.5, -36.0, -1.0, 2.3)
+    coping(cop, "x", -14.0, 14.0, -36.5, -36.0, 2.3)
+    # control room dressing: glazing towards the alcove (either side of the divider), a door and windows
+    # to the south, a parapet, plinth and rain pipes
+    for x0, x1 in ((-3.8, -2.4), (-1.9, -0.6), (0.6, 1.9), (2.4, 3.8)):
+        window("Control_Room", "x", -11.6, 1, x0, x1, 1.1, 2.5)
+    door("Control_Room", "x", -16.0, -1, -0.55, 0.55)
+    for x0, x1 in ((-3.4, -2.2), (2.2, 3.4)):
+        window("Control_Room", "x", -16.0, -1, x0, x1, 1.2, 2.3)
+    for xs in (-1, 1):
+        window("Control_Room", "y", xs * 4.5, xs, -14.6, -13.0, 1.1, 2.4)
+    par = G("Control_Parapet", "M_ConcreteCast")
+    wbox(par, -4.7, 4.7, -16.2, -16.0, 3.6, 3.82, b=0.015, bottom=True)
+    wbox(par, -4.7, 4.7, -11.8, -11.6, 3.6, 3.82, b=0.015, bottom=True)
+    wbox(par, -4.7, -4.5, -16.0, -11.8, 3.6, 3.82, b=0.015, bottom=True)
+    wbox(par, 4.5, 4.7, -16.0, -11.8, 3.6, 3.82, b=0.015, bottom=True)
+    facade_plinth(G("Control_Plinth", "M_ConcreteCast", "nc"), -4.5, 4.5, -16.0, -11.6)
+    for xs in (-1, 1):
+        downpipe(G("Control_Pipes", "M_PaintGrey", "nc"), xs * 4.4, -16.08, 3.55, dy=-0.12)
 
     # ---- backdrop: cliff face, sea, hillside, sea stacks
     def cliff(i, j):
@@ -470,6 +516,12 @@ def build_center():
         r = 1.6 + 1.4 * (0.5 + 0.5 * noise.noise(Vector((k * 1.3, 0.2, 5.0))))
         rock(boulders, (bxp, byp, hill_z(bxp, byp) + r * 0.25), (r * 1.3, r, r * 0.8), seed=k + 60, subdiv=2)
     boxr(G("Sea", "M_Sea", "far"), -1500, 1500, -1500, -36.0, -26.5, -26.0, skip=("-z",))
+    # power line along the hillside behind the north wall
+    poles = []
+    for x in range(-140, 141, 28):
+        y = 44.0 + 2.5 * noise.noise(Vector((x * 0.05, 4.4, 0.0)))
+        poles.append((x, y, hill_z(x, y)))
+    power_line(poles)
     stacks = G("SeaStacks", "M_Rock", "far")
     for k, (x, y, r, h) in enumerate([(-70, -75, 9, 22), (-38, -95, 6, 15), (25, -82, 8, 19), (85, -70, 10, 26),
                                       (140, -120, 14, 30), (-130, -110, 12, 24), (0, -150, 9, 14)]):
@@ -497,6 +549,13 @@ def build_side(sx):
     def X(a):
         return sx * a
 
+    def cb(g, a0, a1, y0, y1, z0, z1, b=0.02, bottom=False):
+        wbox(g, X(a0), X(a1), y0, y1, z0, z1, b=b, bottom=bottom)
+
+    def out_a():
+        """Outward normal sign (world x) of a wall face that looks towards larger a."""
+        return sx
+
     # ------------------------------------------------------------------ ground
     gnd = G("Ground_Asphalt_" + S, "M_Asphalt")
     bx(gnd, 0, 58, -27, 13, -0.5, 0, skip=("-z",))
@@ -521,18 +580,53 @@ def build_side(sx):
         roof.poly(q, want=(0, 0.6, 1))
         roof.poly([Vector((X(58.0), y0, 13)), Vector((X(58.0), ym, 13 + hh)), Vector((X(58.0), y1, 13))], want=(-sx, 0, 0))
     bx(G("Seawall_" + S, "M_Concrete"), 14, 58, -36.5, -36.0, -1.0, 1.1)
-    posts = G("LampPosts_" + S, "M_Metal")
+    cop = G("Coping_" + S, "M_ConcreteCast")
+    coping(cop, "x", X(14), X(58), -36.5, -36.0, 1.1)
+    posts = G("LampPosts_" + S, "M_PaintGrey")
+    heads = G("LampHeads_" + S, "M_PaintGrey", "nc")
+    lens = G("LampLens_" + S, "M_Glass", "nc")
     for a in (20, 32, 44, 54):
-        vcyl(posts, X(a), -35.8, 0.0, 7.0, 0.09, seg=10)
-        box(posts, (X(a), -35.2, 7.0), (0.25, 1.4, 0.15))
+        street_lamp(posts, heads, lens, X(a), -35.8, 0.0, 1.0)
+
+    # warehouse inner face (a = 58, facing the map): concrete base course, steel columns, roller shutters
+    # with guides, coil boxes and keep-clear hatching, a high glazing band, gutter and rain pipes.
+    # Everything stays within the player clip in front of the wall, so movement is unchanged.
+    shutters = ((21.5, 26.5), (-32.0, -27.0))
+    for y0, y1 in ((-36.0, -32.14), (-26.86, -12.6), (12.6, 21.36), (26.64, 36.0)):
+        cb(G("Warehouse_Base_" + S, "M_ConcreteCast"), 57.86, 58.0, y0, y1, 0.0, 1.6, b=0.02)
+    wcol = G("Warehouse_Columns_" + S, "M_PaintGrey")
+    for yc in range(-33, 34, 6):
+        bx(wcol, 57.78, 57.8, yc - 0.15, yc + 0.15, 0, 12.75)
+        bx(wcol, 57.8, 57.98, yc - 0.012, yc + 0.012, 0, 12.75)
+        bx(wcol, 57.98, 58.0, yc - 0.15, yc + 0.15, 0, 12.75)
+    for y0, y1 in shutters:
+        bx(G("Warehouse_Shutter_" + S, "M_Shutter"), 57.92, 58.0, y0, y1, 0, 6.0)
+        guides = G("Warehouse_Guides_" + S, "M_PaintGrey")
+        bx(guides, 57.82, 58.0, y0 - 0.14, y0, 0, 6.3)
+        bx(guides, 57.82, 58.0, y1, y1 + 0.14, 0, 6.3)
+        cb(G("Warehouse_Coil_" + S, "M_PaintGrey"), 57.45, 58.0, y0 - 0.2, y1 + 0.2, 6.0, 6.7, b=0.03, bottom=True)
+        bx(G("Warehouse_Hatch_" + S, "M_Hazard", "nc"), 55.6, 57.75, y0, y1, 0.0, 0.006, skip=("-z",))
+        sp = G("ShutterPosts_" + S, "M_PaintYellow")
+        for yy in (y0 - 0.45, y1 + 0.45):
+            lathe(sp, (X(57.3), yy, 0.0), EZ, [(0.1, 0.0), (0.1, 1.05), (0.06, 1.12), (0.0, 1.13)], seg=10)
+    for k in range(11):
+        yc = -33 + 6 * k
+        window("Warehouse_" + S, "y", X(58.0), -sx, yc + 0.35, yc + 5.65, 9.6, 11.0, mullion=False)
+    bx(G("Warehouse_Gutter_" + S, "M_PaintGrey", "nc"), 57.72, 58.0, -36.5, 37.0, 12.75, 13.0)
+    for yy in (-21.0, 17.0, 33.0):
+        downpipe(G("Warehouse_Pipes_" + S, "M_PaintGrey", "nc"), X(57.92), yy, 12.8, dx=-sx * 0.12)
 
     # ------------------------------------------------------------------ spawn yard (a 44..58, |y| < 12)
-    yard = G("Yard_Walls_" + S, "M_Concrete")
+    yard = G("Yard_Walls_" + S, "M_ConcreteCast")
     wx(yard, 38, 58, 12.0, 12.6, 0, 4.0, [(47.0, 50.5, 0, 3.0)])
     wx(yard, 38, 58, -12.6, -12.0, 0, 4.0, [(47.0, 50.5, 0, 3.0)])
     # Baffles continue the office line into the yard so no exit or door can see the spawns.
     bx(yard, 44.0, 52.5, 8.6, 9.0, 0, 2.8, skip=("-z",))
     bx(yard, 44.0, 52.5, -9.0, -8.6, 0, 2.8, skip=("-z",))
+    coping(cop, "x", X(38), X(58), 12.0, 12.6, 4.0)
+    coping(cop, "x", X(38), X(58), -12.6, -12.0, 4.0)
+    coping(cop, "x", X(44.0), X(52.5), 8.6, 9.0, 2.8)
+    coping(cop, "x", X(44.0), X(52.5), -9.0, -8.6, 2.8)
     paint = G("Yard_Paint_" + S, "M_Paint" + ("Red" if sx < 0 else "Blue"), "nc")
     bx(paint, 57.95, 58.0, -12.0, 12.0, 0.0, 1.4)
     bx(paint, 44.0, 44.05, -9.0, 9.0, 0.0, 1.4)
@@ -541,6 +635,7 @@ def build_side(sx):
     bx(paint, 46.0, 56.0, -0.15, 0.15, 0.0, 0.006)
     canopy = G("Yard_Canopy_" + S, "M_Corrugated")
     bx(canopy, 52.0, 58.0, -10.0, 10.0, 4.2, 4.35)
+    bx(G("Yard_Fascia_" + S, "M_PaintGrey", "nc"), 51.88, 52.0, -10.05, 10.05, 4.05, 4.42)
     cols = G("Yard_Columns_" + S, "M_Metal")
     for yy in (-9.8, -3.3, 3.3, 9.8):
         bx(cols, 52.05, 52.35, yy - 0.15, yy + 0.15, 0, 4.2, skip=("-z",))
@@ -556,26 +651,41 @@ def build_side(sx):
     ac = G("Office_AC_" + S, "M_Metal", "nc")
     bx(ac, 40, 41.6, -4, -2.4, 7.6, 8.6)
     bx(ac, 40, 41.6, 2.0, 3.6, 7.6, 8.6)
+    off = "Office_" + S
+    for yc in (-6.0, -3.0, 3.0, 6.0):
+        window(off, "y", X(38), -sx, yc - 0.8, yc + 0.8, 1.0, 2.3)
+    for yc in (-6.0, -3.0, 0.0, 3.0, 6.0):
+        window(off, "y", X(38), -sx, yc - 0.8, yc + 0.8, 4.5, 5.9)
+        window(off, "y", X(44), sx, yc - 0.8, yc + 0.8, 4.5, 5.9)
+    door(off, "y", X(38), -sx, -0.55, 0.55)
+    door(off, "y", X(44), sx, 2.45, 3.55)
+    for yy, o in ((9.0, 1), (-9.0, -1)):
+        for a0, a1 in ((39.2, 40.6), (41.4, 42.8)):
+            xa, xb = sorted((X(a0), X(a1)))
+            window(off, "x", yy, o, xa, xb, 1.0, 2.3)
+            window(off, "x", yy, o, xa, xb, 4.5, 5.9)
+    par = G("Office_Parapet_" + S, "M_ConcreteCast")
+    cb(par, 37.8, 44.2, -9.2, -9.0, 7.6, 7.88, b=0.015, bottom=True)
+    cb(par, 37.8, 44.2, 9.0, 9.2, 7.6, 7.88, b=0.015, bottom=True)
+    cb(par, 37.8, 38.0, -9.0, 9.0, 7.6, 7.88, b=0.015, bottom=True)
+    cb(par, 44.0, 44.2, -9.0, 9.0, 7.6, 7.88, b=0.015, bottom=True)
+    facade_plinth(G("Office_Plinth_" + S, "M_ConcreteCast", "nc"), min(X(38), X(44)), max(X(38), X(44)), -9.0, 9.0)
+    for yy in (-8.7, 8.7):
+        downpipe(G("Office_Pipes_" + S, "M_PaintGrey", "nc"), X(38) - sx * 0.08, yy, 7.5, dx=-sx * 0.12)
 
     # ------------------------------------------------------------------ staging yard (a 24..44)
-    truck = "Truck_" + S
-    bx(G(truck + "_Chassis", "M_Dark"), 30.0, 32.0, 5.5, 13.0, 0.55, 1.2)
-    wheels = G(truck + "_Wheels", "M_Dark")
-    for yy in (6.4, 8.0, 12.0):
-        for a in (29.6, 32.02):
-            cylinder(wheels, (X(a), yy, 0.55), (X(a + 0.38), yy, 0.55), 0.55, seg=16)
-    bx(G(truck + "_Hopper", "M_TankPaint"), 29.9, 32.1, 5.5, 10.6, 1.2, 3.4, skip=("-z",))
-    bx(G(truck + "_Cab", "M_PaintYellow"), 29.9, 32.1, 11.0, 13.0, 1.2, 3.0, skip=("-z",))
-    cont = G("Containers_" + S, "M_Container")
-    bx(cont, 29.5, 31.94, -13.5, -7.4, 0, 2.6, skip=("-z",))
-    bx(cont, 16.5, 18.94, -1.5, 4.6, 0, 2.6, skip=("-z",))
-    bx(cont, 33.0, 39.1, -35.6, -33.16, 0, 2.6, skip=("-z",))
+    truck("Truck", S, X(31.0), 5.5, math.pi / 2, L=7.5, W=2.2, r=0.55, axles=(0.9, 2.5, 6.5), cab_len=2.0,
+          cab_mat="M_PaintYellow" if sx < 0 else "M_PaintWhite", body="hopper", body_mat="M_TankPaint", z_body=1.2)
+    cols = ("Red", "Green", "White") if sx < 0 else ("Blue", "Orange", "White")
+    container(f"Containers_{cols[0]}_{S}", "M_Container" + cols[0], X(30.72), -10.45, math.pi / 2, L=6.1, door=1)
+    container(f"Containers_{cols[1]}_{S}", "M_Container" + cols[1], X(17.72), 1.55, math.pi / 2, L=6.1, door=-1)
+    container(f"Containers_{cols[2]}_{S}", "M_Container" + cols[2], X(36.05), -34.38, 0.0, L=6.1, door=sx)
     jer = G("Barriers_" + S, "M_Concrete")
     jersey(jer, X(26), X(29), -2.3, -1.7)
     jersey(jer, X(10.5), X(13.5), 5.7, 6.3)
     jersey(jer, X(11.7), X(12.3), -6.5, -3.5)
     jersey(jer, X(42), X(45), -28.5, -27.9)
-    bx(jer, 27.0, 29.4, -30.6, -29.4, 0, 1.2, skip=("-z",))
+    cb(jer, 27.0, 29.4, -30.6, -29.4, 0, 1.2, b=0.04)
     sk = G("Sacks_" + S, "M_Sacks")
     sacks(sk, X(34.0), X(35.2), -3.0, -1.0, 0, 1.2)
     sacks(sk, X(21.0), X(22.2), -8.0, -6.0, 0, 1.2)
@@ -596,29 +706,44 @@ def build_side(sx):
     # weighbridge office (south-east of the yard)
     bx(G("Weighbridge_" + S, "M_Facade"), 47, 53, -22, -17, 0, 3.2, skip=("-z", "+z"))
     bx(G("Weighbridge_Roof_" + S, "M_Concrete"), 46.8, 53.2, -22.2, -16.8, 3.2, 3.4)
+    wb = "Weighbridge_" + S
+    for a0, a1 in ((48.0, 49.4), (50.6, 52.0)):
+        xa, xb = sorted((X(a0), X(a1)))
+        window(wb, "x", -17.0, 1, xa, xb, 1.0, 2.2)
+    window(wb, "y", X(47), -sx, -20.6, -18.4, 1.0, 2.2)
+    xa, xb = sorted((X(49.5), X(50.5)))
+    door(wb, "x", -22.0, -1, xa, xb)
+    facade_plinth(G("Weighbridge_Plinth_" + S, "M_ConcreteCast", "nc"), min(X(47), X(53)), max(X(47), X(53)), -22.0, -17.0, h=0.3)
+    bx(G("Weighbridge_Plate_" + S, "M_Plate", "nc"), 30.0, 42.0, -29.5, -26.6, 0.0, 0.012, skip=("-z",))
+    wpe = G("Weighbridge_PlateEdge_" + S, "M_Dark", "nc")
+    bx(wpe, 29.9, 42.1, -29.6, -29.5, 0.0, 0.014, skip=("-z",))
+    bx(wpe, 29.9, 42.1, -26.6, -26.5, 0.0, 0.014, skip=("-z",))
     # brine pump shed in the north staging area (breaks the open ground between tank C and the pans)
     bx(G("PumpShed_" + S, "M_Corrugated"), 28.5, 33.5, 28.0, 33.5, 0, 3.6, skip=("-z", "+z"))
     bx(G("PumpShed_Roof_" + S, "M_Metal"), 28.3, 33.7, 27.8, 33.7, 3.6, 3.75)
+    xa, xb = sorted((X(30.4), X(31.6)))
+    door("PumpShed_" + S, "x", 28.0, -1, xa, xb)
+    window("PumpShed_" + S, "y", X(28.5), -sx, 29.8, 31.6, 1.2, 2.2)
     crate(G("Crates_" + S, "M_Wood"), X(26.6), 19.6, 0)
     # dump truck on the cliff road
-    dt = "DumpTruck_" + S
-    bx(G(dt + "_Chassis", "M_Dark"), 46.0, 52.0, -30.3, -28.5, 0.6, 1.3)
-    dwh = G(dt + "_Wheels", "M_Dark")
-    for a in (47.0, 48.4, 51.0):
-        for yy, w in ((-30.7, 0.38), (-28.1, -0.38)):
-            cylinder(dwh, (X(a), yy, 0.6), (X(a), yy + w, 0.6), 0.6, seg=16)
-    bx(G(dt + "_Bed", "M_PaintYellow"), 46.0, 50.0, -30.4, -28.4, 1.3, 3.2, skip=("-z",))
-    bx(G(dt + "_Cab", "M_Metal"), 50.2, 52.0, -30.3, -28.5, 1.3, 3.1, skip=("-z",))
-    barrels = G("Barrels_" + S, "M_Metal")
-    for (a, y) in [(45.0, 16.0), (45.7, 16.2), (45.3, 16.8), (36.5, 20.5), (37.1, 20.9), (25.4, -5.2)]:
-        vcyl(barrels, X(a), y, 0, 0.9, 0.3, seg=14, caps=(False, True))
+    truck("DumpTruck", S, X(46.0), -29.4, 0.0 if sx > 0 else math.pi, L=6.0, W=2.0, r=0.6, axles=(1.0, 2.4, 5.0), cab_len=1.8,
+          cab_mat="M_PaintWhite" if sx < 0 else "M_PaintGrey", body="dump", body_mat="M_PaintYellow", z_body=1.3)
+    for k, (a, y) in enumerate([(45.0, 16.0), (45.7, 16.2), (45.3, 16.8), (36.5, 20.5), (37.1, 20.9), (25.4, -5.2)]):
+        mat = ("M_DrumBlue", "M_Rust", "M_Metal")[k % 3]
+        drum(G(f"Barrels_{mat[2:]}_{S}", mat), G(f"Barrel_Rings_{mat[2:]}_{S}", mat, "nc"), X(a), y)
 
     # ------------------------------------------------------------------ pump house half
-    ph = G("Pump_Walls_" + S, "M_Concrete")
+    ph = G("Pump_Walls_" + S, "M_ConcreteCast")
     wy(ph, -7.0, 7.0, 7.6, 8.0, 0, 8.0,
        [(-1.2, 1.2, 0.0, 2.8), (3.5, 5.5, 1.1, 2.3), (-4.8, -3.0, 1.1, 2.3), (-3.0, 3.0, 4.8, 6.4)])
     wx(ph, 0, 7.6, 6.6, 7.0, 0, 8.0, [(3.5, 5.5, 0.0, 2.6), (2.0, 5.0, 4.8, 6.0)])
     wx(ph, 0, 7.6, -7.0, -6.6, 0, 8.0, [(0.6, 2.6, 0.0, 2.6), (0.8, 2.8, 4.8, 6.0)])
+    coping(cop, "y", -7.0, 7.0, X(7.6), X(8.0), 8.0)
+    coping(cop, "x", X(0.0), X(7.6), 6.6, 7.0, 8.0)
+    coping(cop, "x", X(0.0), X(7.6), -7.0, -6.6, 8.0)
+    tube(G("Pump_RisePipe_" + S, "M_Rust"), [Vector((X(8.17), 6.2, 0.0)), Vector((X(8.17), 6.2, 8.35)), Vector((X(6.8), 6.2, 8.35))], 0.12, seg=12)
+    for zb in (1.0, 3.5, 6.0):
+        bx(G("Pump_PipeClamps_" + S, "M_Metal", "nc"), 8.0, 8.32, 6.05, 6.35, zb, zb + 0.06)
     slab = G("Pump_Slab_" + S, "M_ConcreteFloor")
     bx(slab, 0, 7.6, -5.0, 6.6, 3.4, 3.7)
     bx(slab, 0, 3.2, -6.6, -5.0, 3.4, 3.7)
@@ -638,9 +763,11 @@ def build_side(sx):
     bx(trim, 8.0, 8.04, 1.2, 1.45, 0.0, 2.8)
 
     # ------------------------------------------------------------------ lane dividers
-    div = G("Divider_" + S, "M_Concrete")
+    div = G("Divider_" + S, "M_ConcreteCast")
     wx(div, 3.0, 24.0, 11.0, 11.6, 0, 3.2, [(8.5, 11.5, 0, 3.2)])
     wx(div, 0.25, 14.0, -11.6, -11.0, 0, 3.2, [(8.0, 11.0, 0, 3.2)])
+    coping(cop, "x", X(3.0), X(24.0), 11.0, 11.6, 3.2, gaps=[(X(8.5), X(11.5))])
+    coping(cop, "x", X(0.25), X(14.0), -11.6, -11.0, 3.2, gaps=[(X(8.0), X(11.0))])
     dp = G("Divider_Pipes_" + S, "M_Rust", "nc")
     for z in (3.45, 3.85):
         cylinder(dp, (X(3.0), 11.3, z), (X(8.5), 11.3, z), 0.17, seg=12, caps=(False, False))
@@ -666,11 +793,7 @@ def build_side(sx):
         bx(sad, a - 0.3, a + 0.3, 17.4, 19.6, 0, 0.6, skip=("-z",))
     bx(G("Sluice_Pillars_" + S, "M_Concrete"), 1.9, 2.9, 19.5, 20.5, 0, 3.2, skip=("-z",))
     cylinder(G("Pans_Pipe_" + S, "M_Rust"), (X(11.0), 26.5, 0.5), (X(2.0), 26.5, 0.5), 0.22, seg=14)
-    hv = "Harvester_" + S
-    bx(G(hv + "_Body", "M_PaintYellow"), 10.0, 13.5, 13.4, 15.8, 0.8, 2.8, skip=("-z",))
-    bx(G(hv + "_Tracks", "M_Dark"), 10.0, 13.5, 13.4, 14.0, 0, 0.8, skip=("-z",))
-    bx(G(hv + "_Tracks", "M_Dark"), 10.0, 13.5, 15.2, 15.8, 0, 0.8, skip=("-z",))
-    bx(G(hv + "_Scoop", "M_Rust", "nc"), 13.5, 14.6, 13.6, 15.6, 0.2, 1.0)
+    harvester(S, X(10.0), 14.6, 0.0 if sx > 0 else math.pi, "M_PaintYellow")
     ps = G("Pans_Sacks_" + S, "M_Sacks")
     sacks(ps, X(16.5), X(18.5), 21.5, 23.5, 0, 2.4)
     sacks(ps, X(4.0), X(5.2), 21.0, 22.2, 0, 1.2)
@@ -731,13 +854,38 @@ def build_side(sx):
     crate(dc, X(11.1), -34.4, 1.2)
     bol = G("Bollards_" + S, "M_Dark")
     for a in (4.0, 9.0, 13.0):
-        vcyl(bol, X(a), -35.6, 1.2, 1.8, 0.22, seg=12)
+        lathe(bol, (X(a), -35.6, 1.2), EZ, [(0.3, 0.0), (0.3, 0.05), (0.2, 0.08), (0.18, 0.4), (0.27, 0.48), (0.27, 0.56), (0.0, 0.6)], seg=14)
 
     # ------------------------------------------------------------------ road markings (decals)
     mark = G("RoadMarks_" + S, "M_PaintYellow", "nc")
     bx(mark, 26.0, 44.0, -30.15, -30.0, 0.0, 0.006)
     for a in range(27, 44, 3):
         bx(mark, a, a + 1.5, -26.2, -26.05, 0.0, 0.006)
+    park = G("ParkingLines_" + S, "M_PaintWhite", "nc")
+    for a in (28.6, 33.4):
+        bx(park, a - 0.06, a + 0.06, 4.5, 14.0, 0.0, 0.005)
+    bx(park, 28.6, 33.4, 13.94, 14.06, 0.0, 0.005)
+
+    # ------------------------------------------------------------------ ground detail and clutter
+    dg, df = G("Drains_" + S, "M_Grate", "nc"), G("DrainFrames_" + S, "M_Dark", "nc")
+    for a, y in ((28.0, 1.0), (36.0, -24.0), (24.5, -29.2), (49.0, -25.5), (35.0, 17.5), (12.0, -14.0)):
+        drain(dg, df, X(a), y)
+    mc, mr = G("Manholes_" + S, "M_Metal", "nc"), G("ManholeRings_" + S, "M_Dark", "nc")
+    for a, y in ((28.0, -20.0), (35.0, 8.0), (30.0, 20.0), (19.0, -31.0)):
+        manhole(mc, mr, X(a), y)
+    pud = G("Puddles_" + S, "M_Puddle", "nc")
+    for k, (a, y, r) in enumerate(((36.5, 2.0, 1.6), (30.0, -32.0, 1.4), (6.5, -14.5, 1.2), (45.0, -14.0, 1.1),
+                                    (34.0, 22.0, 1.8), (24.5, -2.5, 1.0))):
+        blob(pud, X(a), y, 0.005, r, seed=k * 3.7 + (0.0 if sx < 0 else 11.0))
+    ibc("IBC_A_" + S, X(39.6), 13.8)
+    ibc("IBC_B_" + S, X(40.9), 13.8)
+    ibc("IBC_C_" + S, X(26.5), -34.9)
+    cable_drum(G("CableDrum_" + S, "M_Wood"), X(46.2), -13.4)
+    cn, cbd = G("Cones_" + S, "M_PaintOrange", "nc"), G("ConeBands_" + S, "M_PaintWhite", "nc")
+    for a, y in ((44.4, -27.0), (45.6, -28.9), (53.6, -31.2), (25.0, -26.6)):
+        cone(cn, cbd, X(a), y)
+    pallet_stack(G("PalletStack_" + S, "M_Wood"), X(25.2), -26.3 + 0.0, 6)
+    pallet_stack(G("PalletStack_" + S, "M_Wood"), X(39.8), 34.6, 5)
 
 
 def build():

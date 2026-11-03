@@ -12,6 +12,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Bag
+    second: {fileID: 2100000, guid: 9240ba2834cb946fe91139168c83068e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Brine
     second: {fileID: 2100000, guid: 418ba72b5daaf41c3acef1b937cb8a48, type: 2}
   - first:
@@ -27,6 +32,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_ConcreteCast
+    second: {fileID: 2100000, guid: dc2d27f7d00be4d7481d6935b24143f5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_ConcreteFloor
     second: {fileID: 2100000, guid: d38e455da668f4ca49728b5a7e1ccde4, type: 2}
   - first:
@@ -34,6 +44,31 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: M_Container
     second: {fileID: 2100000, guid: 18781e01e4de2418b9a85799e54336bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ContainerBlue
+    second: {fileID: 2100000, guid: af6bcfe8cee224ef69e5f37e8c2fd558, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ContainerGreen
+    second: {fileID: 2100000, guid: d0f54e49b9854412395922d152bb280e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ContainerOrange
+    second: {fileID: 2100000, guid: 6c37c23b4c6af40a7ab02adfe4c0368a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ContainerRed
+    second: {fileID: 2100000, guid: 5553aa618624c4526b390f9a3bf29a04, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_ContainerWhite
+    second: {fileID: 2100000, guid: 740a44dfec24e46f18973196e3a0cee8, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -47,8 +82,18 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_DrumBlue
+    second: {fileID: 2100000, guid: bd855805eb4214b279a2fb9d4f90125b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Facade
     second: {fileID: 2100000, guid: 4a4e14560473141b9be8414a23b66454, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Glass
+    second: {fileID: 2100000, guid: b97d8b1e12ab5483fb60c41137b3f8c1, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -82,8 +127,23 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_PaintGrey
+    second: {fileID: 2100000, guid: b4e3956e87c634989915aa922635475e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintOrange
+    second: {fileID: 2100000, guid: 1a2ed9dd5d3a94ec3acad7186935e5ea, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_PaintRed
     second: {fileID: 2100000, guid: 4b1181580ea8048c0b4e46f242a5ff75, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_PaintWhite
+    second: {fileID: 2100000, guid: 9ed47e39213834f869e0eb1c98cb6848, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -92,13 +152,28 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Plastic
+    second: {fileID: 2100000, guid: 0bc191cbe8cc5453fb31a6e95391dcf8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Plate
     second: {fileID: 2100000, guid: e549889b9920a4a6eb3044f0117be7e4, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: M_Puddle
+    second: {fileID: 2100000, guid: c26e4e2f231104710a512d6a2aa947ef, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: M_Rock
     second: {fileID: 2100000, guid: bd5847e01387145879567bd5505a9c6c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Rubber
+    second: {fileID: 2100000, guid: c1e603549755c45b9b3eea7985ec8a0e, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -119,6 +194,11 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: M_Sea
     second: {fileID: 2100000, guid: fa5b343b5e388482ea42f30db33373f0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: M_Shutter
+    second: {fileID: 2100000, guid: f212adcba018b420f839b3c4ad7de708, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

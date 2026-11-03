@@ -369,5 +369,16 @@
     "metal_mean": 0.004,
     "rough_mean": 0.633,
     "ao_mean": 0.88
+  },
+  "ContainerPaint": {
+    "polyhaven_id": "container_side",
+    "url": "https://polyhaven.com/a/container_side",
+    "license": "CC0",
+    "authors": [
+      "Dimitrios Savva"
+    ],
+    "size_m": 1.94,
+    "treatment": "neutral grey, derived from T_Container_D (derive_container_paint.py)",
+    "albedo_lum_linear": 0.5
   }
 }

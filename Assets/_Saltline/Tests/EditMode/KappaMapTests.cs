@@ -444,5 +444,20 @@ namespace Saltline.Tests
                 Assert.AreEqual("Universal Render Pipeline/Lit", m.shader.name, $"{m.name}: wrong shader");
             }
         }
+
+        /// <summary>The lamp panels must glow, and every other map material must have no emission.</summary>
+        [Test]
+        public void OnlyLampsAreEmissive()
+        {
+            SkipIfMissing();
+            var lamp = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Saltline/Art/Maps/Kappa/Materials/M_Lamp.mat");
+            Assert.IsNotNull(lamp, "M_Lamp missing");
+            Assert.IsTrue(lamp.IsKeywordEnabled("_EMISSION"), "M_Lamp has no _EMISSION keyword: the lamps render unlit");
+            Assert.Greater(lamp.GetColor("_EmissionColor").maxColorComponent, 1f, "M_Lamp emission too weak");
+            var others = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None)
+                .Select(r => r.sharedMaterial).Where(m => m != null && m != lamp && m.IsKeywordEnabled("_EMISSION"))
+                .Select(m => m.name).Distinct().ToList();
+            Assert.IsEmpty(others, $"unexpected emissive materials: {string.Join(", ", others)}");
+        }
     }
 }
