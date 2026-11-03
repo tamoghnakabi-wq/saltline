@@ -12,7 +12,7 @@ The releases published so far are listed under [Published releases](#published-r
 
 `Assets/_Saltline/Scripts/Runtime/Core/BuildInfo.cs` holds both numbers every build carries:
 
-- **`Version`** (`0.1.0`): the game version, shown in the menu footer and used in file names and release tags.
+- **`Version`** (`0.1.1`): the game version, shown in the menu footer and used in file names and release tags.
   Bump it for every release.
 - **`NetProtocol`** (`4`): bump it whenever a network message, RPC or synchronized struct changes. Two builds can
   play together only if their protocols are equal:
@@ -24,8 +24,8 @@ The releases published so far are listed under [Published releases](#published-r
 On launch, the main menu reads a small JSON file (`version.json`) from `BuildInfo.UpdateManifestUrl`:
 
 ```json
-{ "game": "SALTLINE", "latest": "0.1.0", "protocol": 4, "minimumProtocol": 4, "minimumVersion": "",
-  "released": "2026-11-03", "download": "https://…/#download" }
+{ "game": "SALTLINE", "latest": "0.1.1", "protocol": 4, "minimumProtocol": 4, "minimumVersion": "",
+  "released": "2026-11-04", "download": "https://…/#download" }
 ```
 
 | The running build | Result in the menu |
@@ -164,4 +164,5 @@ Each release needs the owner's go-ahead. The steps, in order:
 
 | Version | Date | Commit | Files |
 |---|---|---|---|
+| 0.1.1 | 2026-11-04 | `3e03dd2` | [release page](https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.1): the logo and app icon; same protocol (4) as 0.1.0 |
 | 0.1.0 | 2026-11-03 | `83c0d07` | [release page](https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0): `SALTLINE-0.1.0-macOS-arm64.zip`, `SALTLINE-0.1.0-Windows-x64.zip`, `SHA256SUMS.txt` |

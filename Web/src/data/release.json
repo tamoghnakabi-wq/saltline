@@ -1,34 +1,34 @@
 {
   "game": "SALTLINE",
-  "version": "0.1.0",
-  "tag": "v0.1.0",
+  "version": "0.1.1",
+  "tag": "v0.1.1",
   "protocol": 4,
   "minimumProtocol": 4,
   "minimumVersion": null,
-  "released": "2026-11-03",
-  "commit": "83c0d0744875412fa105d47216f0af57fa6c94c2",
+  "released": "2026-11-04",
+  "commit": "3e03dd2c9f86dc65e01686a8f9da8e1272e864a7",
   "repo": "tamoghnakabi-wq/saltline",
-  "releasePage": "https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0",
-  "checksums": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SHA256SUMS.txt",
-  "notes": "## First public test release\n\n- 4v4 team deathmatch on Kappa Saltworks: first team to 50 kills, or the most kills after 10 minutes.\n- Five weapons: VK-21 Halyard rifle, SMR-9 Wasp SMG, TS-12 Breaker shotgun and LR-338 Longreach sniper rifle as primaries; P-45 Brace pistol as the sidearm.\n- Sprint, crouch, slide and jump; first- or third-person view.\n- Online play through Unity Relay: one player hosts from the menu and up to seven others join, with no port forwarding. The host runs the match, and the match ends if the host leaves.\n- macOS (Apple silicon) and Windows x64 builds share the same content and network protocol, so they are built to join each other's matches (not yet tested between the two, see below).\n- Graphics presets from Low to Ultra, plus Laptop for thin-and-light machines (the default on Apple-silicon laptops).\n- On first launch the game prepares its shaders in the main menu (3.5\u20135 s on a MacBook Air M4) so the first match does not freeze.\n- The menu checks the website for a newer version when the game starts. When a release changes the network protocol, older versions are asked to update instead of finding no matches.\n\n## Known limitations\n\n- The Windows build has not been tested on Windows hardware yet. Online play has been tested between several copies of the game on one Mac, through Relay; players on separate machines, and Mac with Windows, have not been tested.\n- The macOS app is not notarized by Apple, and the Windows executable is not code-signed, so both systems warn the first time you open the game.\n- One map and one mode.",
+  "releasePage": "https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.1",
+  "checksums": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.1/SHA256SUMS.txt",
+  "notes": "## The SALTLINE logo\n\n- SALTLINE now has a logo: an S drawn as the map's three lanes, with the sea horizon running through the middle\n  lane. It is the app icon on macOS and Windows (0.1.0 showed a blank icon) and sits above the name in the main\n  menu.\n- The name in the main menu no longer runs past the edge of its panel.\n\nSame network protocol as 0.1.0 (4), so 0.1.0 and 0.1.1 can play together.\n\n## Known limitations\n\n- The Windows build has not been tested on Windows hardware yet. Online play has been tested between several copies of the game on one Mac, through Relay; players on separate machines, and Mac with Windows, have not been tested.\n- The macOS app is not notarized by Apple, and the Windows executable is not code-signed, so both systems warn the first time you open the game.\n- One map and one mode.",
   "files": [
     {
       "platform": "macos-arm64",
       "label": "macOS (Apple silicon)",
-      "name": "SALTLINE-0.1.0-macOS-arm64.zip",
-      "size": 375673528,
-      "sha256": "4366ed01105edf6d0a4660cbfbd973c64ea8bd9a05192e36d5d9e51b66729eab",
-      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SALTLINE-0.1.0-macOS-arm64.zip",
-      "built": "2026-11-03T12:44:30Z"
+      "name": "SALTLINE-0.1.1-macOS-arm64.zip",
+      "size": 375924517,
+      "sha256": "d019669ff35854a3e6c24b73f5fb9fe2cb6601ab606b333c2cdf2a03fa0047a2",
+      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.1/SALTLINE-0.1.1-macOS-arm64.zip",
+      "built": "2026-11-03T14:18:24Z"
     },
     {
       "platform": "windows-x64",
       "label": "Windows x64",
-      "name": "SALTLINE-0.1.0-Windows-x64.zip",
-      "size": 366479535,
-      "sha256": "146adaa12fad1805fe86a18c1f3fe6b7bf48eb2de79c75adfa629df3cd3d6bb1",
-      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SALTLINE-0.1.0-Windows-x64.zip",
-      "built": "2026-11-03T12:45:00Z"
+      "name": "SALTLINE-0.1.1-Windows-x64.zip",
+      "size": 366469337,
+      "sha256": "3bc39f67957035c23ee1c5279909d96fc6b3c0f4b7d8a74d6564ece2b6eed9fc",
+      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.1/SALTLINE-0.1.1-Windows-x64.zip",
+      "built": "2026-11-03T14:18:44Z"
     }
   ]
 }

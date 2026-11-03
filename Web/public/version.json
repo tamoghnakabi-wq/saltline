@@ -1,9 +1,9 @@
 {
   "game": "SALTLINE",
-  "latest": "0.1.0",
+  "latest": "0.1.1",
   "protocol": 4,
   "minimumProtocol": 4,
   "minimumVersion": "",
-  "released": "2026-11-03",
+  "released": "2026-11-04",
   "download": "https://saltline-five.vercel.app/#download"
 }

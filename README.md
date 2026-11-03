@@ -4,9 +4,9 @@ An original 4v4 team deathmatch shooter for macOS (Apple silicon) and Windows, m
 Universal Render Pipeline. One map, Kappa Saltworks: a coastal salt works with three lanes (salt pans to the
 north, the pump house in the middle, the dock to the south).
 
-**Status: version 0.1.0, a first public test release.** Download it from
+**Status: version 0.1.1, a public test release.** Download it from
 [saltline-five.vercel.app](https://saltline-five.vercel.app/#download) or
-[GitHub Releases](https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0).
+[GitHub Releases](https://github.com/tamoghnakabi-wq/saltline/releases/latest).
 The macOS build has been played and tested on one MacBook Air M4.
 The Windows build compiles and packages, but has never been run on a Windows machine. See
 [Known limitations](#known-limitations).
