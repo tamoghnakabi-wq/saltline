@@ -6,7 +6,8 @@ Nothing is sampled or recorded, so every file is original and can be regenerated
     python3 ArtSource/Audio/gen_sfx.py [--out DIR]
 
 Writes 48 kHz 16-bit mono WAV files (default: Assets/_Saltline/Audio/Generated) and a
-manifest.json listing every sound with its group, variants and length.
+manifest.json listing every sound with its group, variants, lengths and loudness (LUFS of the
+loudest 400 ms, which the editor's AudioFactory turns into each sound's volume).
 """
 import argparse
 import json
@@ -118,40 +119,72 @@ def finish(x, peak=0.89, drive=1.0, fade=0.004):
 
 # ---------------------------------------------------------------- sound recipes
 
-def gunshot(rng, crack_band, crack_tau, body_f, body_tau, boom, tail_rt, tail_mix, mech_f, drive, far=False):
-    dur = 0.35 + tail_rt
+def slapback(x, rng, delays, level, bright):
+    """Discrete echoes off nearby walls and containers: delayed, darker, quieter copies."""
+    out = np.zeros(len(x) + int(max(delays) * SR) + 1)
+    src = lp(hp(x, 250), bright)
+    for k, d in enumerate(delays):
+        g = level * (0.75 ** k) * rng.uniform(0.8, 1.1) * (1 if k % 2 == 0 else -1)
+        place(out, src * g, d)
+    return out[: len(x)]
+
+
+def gunshot(rng, crack_band, crack_tau, blast_f, blast_tau, body_f, body_tau, boom, tail_rt, tail_mix, rumble, mech_f, drive, far=False):
+    """
+    Layers, front to back: a broadband onset, the crack, a mid-range blast (most of the
+    perceived bang, and what small speakers can play), a short low thump, the action's
+    metal clack, then slapback echoes and a reverb fed only above 200 Hz, so the tail
+    reads as reflections rather than a long rumble. Far shots lose the onset and crack.
+    """
+    dur = 0.4 + tail_rt
     x = np.zeros(int(dur * SR))
-    # muzzle transient
-    click = hp(noise(0.003, rng), 2000) * env_exp(0.003, 0.0007)
-    place(x, click * 0.9, 0.0)
-    # supersonic / muzzle crack
-    c = bp(noise(0.08, rng), *crack_band, order=2) * env_exp(0.08, crack_tau, 0.0003)
-    place(x, c * 1.4, 0.0005)
-    # pressure body: falling sine + low noise
-    b = sweep(0.4, body_f * 2.2, body_f, 0.012) * env_exp(0.4, body_tau, 0.001)
-    bn = lp(noise(0.4, rng), body_f * 6) * env_exp(0.4, body_tau * 0.7, 0.001)
-    place(x, (b * 1.0 + bn * 0.8) * boom, 0.0008)
-    # action: small metal clack a little later
+    # onset: very short, broadband
+    onset = hp(noise(0.004, rng), 500) * env_exp(0.004, 0.0006, 0.00005)
+    place(x, onset * 1.0, 0.0)
+    # crack
+    c = bp(noise(0.08, rng), *crack_band, order=2) * env_exp(0.08, crack_tau, 0.0002)
+    place(x, c * 1.1, 0.0003)
+    # blast: band noise around blast_f, plus a damped resonance at blast_f
+    bl = bp(noise(0.3, rng), blast_f * 0.45, blast_f * 3.2, order=2) * env_exp(0.3, blast_tau, 0.0006)
+    br = modes(0.3, [blast_f, blast_f * 1.6], [blast_tau * 0.8, blast_tau * 0.5], [1.0, 0.4], rng, jitter=0.04)
+    place(x, (bl * 2.2 + br * 0.35) * boom, 0.0005)
+    # low thump: short falling sine
+    b = sweep(0.25, body_f * 2.4, body_f, 0.01) * env_exp(0.25, body_tau, 0.0015)
+    place(x, b * 1.1 * boom, 0.0008)
+    # action clack
     m = modes(0.08, [mech_f, mech_f * 2.37, mech_f * 3.91], [0.012, 0.008, 0.005], [0.5, 0.3, 0.2], rng)
-    place(x, m * 0.18, 0.045 + rng.uniform(0, 0.01))
+    place(x, m * 0.12, 0.045 + rng.uniform(0, 0.01))
     dry = x.copy()
-    ir = reverb_ir(tail_rt, tail_rt, rng, bright=3500 if not far else 1800, predelay=0.02 if not far else 0.06)
-    wet = convolve(dry, ir)[: len(x)]
+
+    # reflections: slapback off the yard's walls, then a diffuse tail fed above 200 Hz
+    delays = sorted(rng.uniform(0.05, 0.28, 4))
+    echoes = slapback(dry, rng, delays, 0.16 if not far else 0.3, 3200 if not far else 1500)
+    ir = reverb_ir(tail_rt, tail_rt, rng, bright=3200 if not far else 1500, predelay=0.02 if not far else 0.05)
+    wet = convolve(hp(dry, 200), ir)[: len(x)]
+    # a short low roll for the big guns (shotgun, sniper)
+    roll = lp(noise(dur, rng), 160) * env_exp(dur, 0.18 + 0.25 * rumble, 0.01) * (0.15 + rumble) * 0.6
     if far:
-        dry = lp(dry, 1400)
-        out = dry * 0.35 + wet * tail_mix * 2.2
+        # distance: no onset, the crack mostly gone, highs absorbed; the blast arrives softened
+        # lows carry further than highs, so the far mix is darker and heavier
+        out = lp(dry, 2200) * 0.45 + lp(dry, 220) * 1.2 + echoes * 1.0 + wet * tail_mix * 1.8 + roll * 2.2
     else:
-        out = dry + wet * tail_mix
+        out = dry + echoes + wet * tail_mix + roll
     return finish(out, drive=drive)
 
 
+
 WEAPONS = {
-    # name: crack band, crack tau, body Hz, body tau, boom, tail rt, tail mix, mech Hz, drive
-    "ar": dict(crack_band=(900, 9000), crack_tau=0.012, body_f=62, body_tau=0.06, boom=1.0, tail_rt=1.1, tail_mix=0.32, mech_f=2300, drive=2.2),
-    "smg": dict(crack_band=(1300, 11000), crack_tau=0.008, body_f=80, body_tau=0.04, boom=0.7, tail_rt=0.8, tail_mix=0.26, mech_f=2800, drive=2.0),
-    "shotgun": dict(crack_band=(500, 6000), crack_tau=0.02, body_f=48, body_tau=0.11, boom=1.5, tail_rt=1.6, tail_mix=0.36, mech_f=1700, drive=2.6),
-    "sniper": dict(crack_band=(1100, 12000), crack_tau=0.016, body_f=44, body_tau=0.14, boom=1.6, tail_rt=2.2, tail_mix=0.42, mech_f=1500, drive=2.8),
-    "pistol": dict(crack_band=(1000, 8000), crack_tau=0.01, body_f=90, body_tau=0.045, boom=0.75, tail_rt=0.9, tail_mix=0.28, mech_f=3100, drive=1.8),
+    # crack band/tau: the snap; blast Hz/tau: the mid-range bang; body: low thump; rumble 0..1: low roll
+    "ar": dict(crack_band=(1000, 9000), crack_tau=0.010, blast_f=380, blast_tau=0.030, body_f=70, body_tau=0.035, boom=1.0,
+               tail_rt=1.1, tail_mix=0.55, rumble=0.25, mech_f=2300, drive=2.0),
+    "smg": dict(crack_band=(1400, 11000), crack_tau=0.007, blast_f=520, blast_tau=0.022, body_f=90, body_tau=0.025, boom=0.85,
+                tail_rt=0.8, tail_mix=0.45, rumble=0.1, mech_f=2800, drive=1.8),
+    "shotgun": dict(crack_band=(600, 6000), crack_tau=0.016, blast_f=240, blast_tau=0.055, body_f=52, body_tau=0.06, boom=1.25,
+                    tail_rt=1.6, tail_mix=0.6, rumble=0.7, mech_f=1700, drive=2.4),
+    "sniper": dict(crack_band=(1200, 12000), crack_tau=0.014, blast_f=260, blast_tau=0.05, body_f=48, body_tau=0.07, boom=1.3,
+                   tail_rt=2.2, tail_mix=0.65, rumble=1.0, mech_f=1500, drive=2.6),
+    "pistol": dict(crack_band=(1100, 8000), crack_tau=0.009, blast_f=600, blast_tau=0.022, body_f=100, body_tau=0.025, boom=0.8,
+                   tail_rt=0.9, tail_mix=0.45, rumble=0.05, mech_f=3100, drive=1.7),
 }
 
 
@@ -181,8 +214,9 @@ def footstep(rng, kind):
         place(x, lp(noise(0.04, rng), 1500) * env_exp(0.04, 0.006) * 0.6, 0.045 + rng.uniform(0, 0.015))
     elif kind == "metal":
         heel = lp(noise(0.04, rng), 2500) * env_exp(0.04, 0.006)
-        ring = modes(0.25, [310, 742, 1180, 1960, 2890], [0.05, 0.035, 0.025, 0.018, 0.012], [0.5, 0.35, 0.25, 0.2, 0.12], rng, jitter=0.08)
-        place(x, heel, 0); place(x, ring * 0.35, 0.002)
+        # steel plate and grating ring well above the heel's thud
+        ring = modes(0.25, [540, 1130, 1870, 2950, 4100], [0.04, 0.03, 0.022, 0.016, 0.01], [0.35, 0.45, 0.4, 0.3, 0.2], rng, jitter=0.08)
+        place(x, heel, 0); place(x, ring * 0.45, 0.002)
         place(x, ring[: int(0.1 * SR)] * 0.2, 0.05)
     elif kind == "gravel":
         for k in range(14):
@@ -190,8 +224,11 @@ def footstep(rng, kind):
             place(x, g * rng.uniform(0.2, 0.6), rng.uniform(0, 0.11))
         place(x, lp(noise(0.06, rng), 900) * env_exp(0.06, 0.012) * 0.7, 0)
     elif kind == "wood":
-        knock = modes(0.15, [180, 410, 690], [0.03, 0.02, 0.012], [1, 0.5, 0.3], rng, jitter=0.1)
-        place(x, knock + lp(noise(0.15, rng), 1200) * env_exp(0.15, 0.01) * 0.6, 0)
+        # a short, dead thud from the boards, then the heel's broadband tap
+        knock = modes(0.15, [170, 390, 660], [0.012, 0.008, 0.005], [0.6, 0.35, 0.2], rng, jitter=0.1)
+        tap = bp(noise(0.03, rng), 900, 4500) * env_exp(0.03, 0.006)
+        place(x, knock + lp(noise(0.15, rng), 2000) * env_exp(0.15, 0.012) * 1.2, 0)
+        place(x, tap * 2.2, 0.001)
     elif kind == "water":
         for k in range(8):
             d = sweep(0.06, rng.uniform(600, 1400), rng.uniform(1500, 2600), 0.02) * env_exp(0.06, 0.012)
@@ -233,9 +270,21 @@ def impact(rng, kind):
         for k in range(16):
             place(x, hp(noise(0.01, rng), 4000) * env_exp(0.01, 0.002) * rng.uniform(0.05, 0.3), rng.uniform(0.01, 0.4))
     elif kind == "flesh":
-        place(x, lp(noise(0.12, rng), 900) * env_exp(0.12, 0.018) * 1.2, 0)
-        place(x, sweep(0.12, 160, 70, 0.02) * env_exp(0.12, 0.03) * 0.8, 0)
-    return finish(x, peak=0.75)
+        # a wet slap carries the hit on any speaker; the thump adds weight on headphones
+        place(x, bp(noise(0.12, rng), 250, 2500) * env_exp(0.12, 0.014) * 2.0, 0)
+        place(x, modes(0.12, [rng.uniform(380, 460), rng.uniform(820, 980)], [0.018, 0.01], [1.0, 0.5], rng, jitter=0.05) * 0.35, 0.001)
+        place(x, sweep(0.12, 160, 70, 0.02) * env_exp(0.12, 0.03) * 0.45, 0)
+    return finish(x, peak=0.95)
+
+
+def land(rng):
+    """Both boots hitting the ground, a scuff, and the kit rattling."""
+    x = np.zeros(int(0.35 * SR))
+    place(x, lp(noise(0.3, rng), 900) * env_exp(0.3, 0.03), 0)
+    place(x, sweep(0.3, 120, 55, 0.03) * env_exp(0.3, 0.05) * 0.5, 0)
+    place(x, bp(noise(0.12, rng), 1200, 6000) * env_exp(0.12, 0.025) * 0.5, 0.004)
+    place(x, mech_sequence(rng, [(0.0, 1500, 0.4, 0.8), (0.05, 2300, 0.25, 0.6)], 0.15) * 0.45, 0.03)
+    return finish(x, peak=0.9)
 
 
 def death(rng):
@@ -244,7 +293,7 @@ def death(rng):
     place(x, impact(rng, "flesh"), 0)
     place(x, lp(noise(0.4, rng), 700) * env_exp(0.4, 0.05) * 0.8, 0.32)
     place(x, mech_sequence(rng, [(0.0, 1200, 0.5, 0.8), (0.06, 1900, 0.3, 0.6)], 0.2) * 0.5, 0.36)
-    return finish(x, peak=0.7)
+    return finish(x, peak=0.9)
 
 
 def whizz(rng):
@@ -318,10 +367,25 @@ def ambience_hum(rng, dur=12.0, fade=1.0):
     n = int(dur * SR)
     m = n + int(fade * SR)
     t = np.arange(m) / SR
-    hum = sum(np.sin(2 * np.pi * 50 * k * t + k) / k ** 1.3 for k in range(1, 7))  # whole cycles per loop
+    # mains hum with the rich harmonics of a loaded motor (whole cycles per loop), a narrow
+    # whine from the pump, and a low rumble; the harmonics keep it audible on small speakers
+    hum = sum(np.sin(2 * np.pi * 50 * k * t + k) / k ** 0.8 for k in range(1, 15))
+    wobble = 1 + 0.15 * np.sin(2 * np.pi * t * 0.25)  # 3 cycles per 12 s loop
+    whine = bp(rng.standard_normal(m), 1850, 1990, order=4) * wobble
     rumble = lp(rng.standard_normal(m), 180)
-    x = loop_crossfade(hum * 0.4 + rumble * 0.6, n, fade)
+    x = loop_crossfade(hum * 0.25 * wobble + whine * 0.5 + rumble * 0.45, n, fade)
     return x / (np.max(np.abs(x)) + 1e-12) * 0.4
+
+
+def loudness(x, win=0.4):
+    """Loudest 400 ms of K-weighted level (ITU-R BS.1770 filters at 48 kHz), in LUFS.
+    Unity uses it to set each sound's volume from a per-group target instead of by ear."""
+    b1, a1 = [1.53512485958697, -2.69169618940638, 1.19839281085285], [1.0, -1.69065929318241, 0.73248077421585]
+    b2, a2 = [1.0, -2.0, 1.0], [1.0, -1.99004745483398, 0.99007225036621]
+    y = signal.lfilter(b2, a2, signal.lfilter(b1, a1, x))
+    n = min(len(y), int(win * SR))
+    ms = np.convolve(y * y, np.ones(n) / n, "valid").max()
+    return -0.691 + 10 * np.log10(ms + 1e-12)
 
 
 # ---------------------------------------------------------------- catalogue
@@ -331,14 +395,16 @@ def build(out):
     manifest = []
 
     def emit(name, group, gen, variants=1, seed=0):
-        lengths = []
+        lengths, louds = [], []
         for v in range(variants):
             rng = np.random.default_rng(seed * 100 + v + 1)
             x = gen(rng)
             fn = f"{name}_{v}.wav" if variants > 1 else f"{name}.wav"
             write_wav(os.path.join(out, fn), x)
             lengths.append(round(len(x) / SR, 3))
-        manifest.append({"name": name, "group": group, "variants": variants, "seconds": lengths})
+            louds.append(loudness(x))
+        manifest.append({"name": name, "group": group, "variants": variants, "seconds": lengths,
+                         "lufs": round(float(np.mean(louds)), 1)})
 
     s = 1
     for w, p in WEAPONS.items():
@@ -347,18 +413,25 @@ def build(out):
 
     emit("mag_out", "weapon", lambda r: mech_sequence(r, [(0.0, 1900, 0.8, 0.5), (0.05, 1300, 0.5, 0.8)], 0.3), 1, s); s += 1
     emit("mag_in", "weapon", lambda r: mech_sequence(r, [(0.0, 1400, 0.5, 0.9), (0.09, 2400, 1.0, 0.4)], 0.35), 1, s); s += 1
-    emit("bolt_rack", "weapon", lambda r: mech_sequence(r, [(0.0, 2100, 0.8, 0.6), (0.11, 1700, 1.0, 0.5)], 0.35), 1, s); s += 1
-    emit("pump", "weapon", lambda r: mech_sequence(r, [(0.0, 900, 0.9, 0.9), (0.16, 1100, 1.0, 0.8)], 0.4), 1, s); s += 1
     emit("shell_in", "weapon", lambda r: mech_sequence(r, [(0.0, 1500, 0.7, 0.7), (0.035, 2600, 0.5, 0.3)], 0.2), 2, s); s += 1
-    emit("bolt_cycle", "weapon", lambda r: mech_sequence(r, [(0.0, 1300, 0.6, 0.5), (0.12, 1600, 0.8, 0.5), (0.3, 1500, 0.9, 0.5), (0.42, 2200, 1.0, 0.4)], 0.6), 1, s); s += 1
-    emit("slide", "weapon", lambda r: mech_sequence(r, [(0.0, 2600, 0.7, 0.5), (0.07, 3100, 1.0, 0.3)], 0.25), 1, s); s += 1
+    # Single actions, triggered by the game at the matching point of each weapon animation
+    # (pump back and forward, the bolt's four movements, charging handle, slide release).
+    emit("pump_back", "weapon", lambda r: mech_sequence(r, [(0.0, 900, 0.9, 0.9), (0.03, 1250, 0.4, 0.6)], 0.22), 1, s); s += 1
+    emit("pump_fwd", "weapon", lambda r: mech_sequence(r, [(0.0, 1100, 1.0, 0.8)], 0.2), 1, s); s += 1
+    emit("bolt_up", "weapon", lambda r: mech_sequence(r, [(0.0, 1300, 0.6, 0.5)], 0.12), 1, s); s += 1
+    emit("bolt_back", "weapon", lambda r: mech_sequence(r, [(0.0, 1600, 0.8, 0.5), (0.025, 1150, 0.4, 0.8)], 0.18), 1, s); s += 1
+    emit("bolt_fwd", "weapon", lambda r: mech_sequence(r, [(0.0, 1500, 0.9, 0.5)], 0.15), 1, s); s += 1
+    emit("bolt_down", "weapon", lambda r: mech_sequence(r, [(0.0, 2200, 1.0, 0.4)], 0.12), 1, s); s += 1
+    emit("charge_back", "weapon", lambda r: mech_sequence(r, [(0.0, 2100, 0.8, 0.6)], 0.15), 1, s); s += 1
+    emit("charge_release", "weapon", lambda r: mech_sequence(r, [(0.0, 1700, 1.0, 0.5), (0.02, 2600, 0.5, 0.3)], 0.2), 1, s); s += 1
+    emit("slide_release", "weapon", lambda r: mech_sequence(r, [(0.0, 3100, 1.0, 0.3), (0.012, 2300, 0.5, 0.4)], 0.18), 1, s); s += 1
     emit("dry_fire", "weapon", lambda r: mech_sequence(r, [(0.0, 3400, 1.0, 0.3)], 0.12), 1, s); s += 1
     emit("equip", "weapon", lambda r: mech_sequence(r, [(0.0, 900, 0.3, 1.0), (0.12, 2000, 0.6, 0.6), (0.18, 2700, 0.4, 0.4)], 0.4), 1, s); s += 1
 
     for kind, n in (("concrete", 4), ("metal", 4), ("gravel", 4), ("wood", 3), ("water", 3)):
         emit(f"step_{kind}", "player", lambda r, k=kind: footstep(r, k), n, s); s += 1
     emit("jump", "player", lambda r: finish(bp(noise(0.25, r), 300, 3000) * env_exp(0.25, 0.06, 0.03), peak=0.4), 1, s); s += 1
-    emit("land", "player", lambda r: finish(lp(noise(0.3, r), 900) * env_exp(0.3, 0.03) + sweep(0.3, 120, 55, 0.03) * env_exp(0.3, 0.05) * 0.6, peak=0.7), 2, s); s += 1
+    emit("land", "player", land, 2, s); s += 1
     emit("slide_loop", "player", lambda r: finish(bp(noise(0.8, r), 400, 5000) * env_exp(0.8, 0.5, 0.02), peak=0.4), 1, s); s += 1
     emit("hurt", "player", lambda r: impact(r, "flesh"), 2, s); s += 1
     emit("death", "player", death, 1, s); s += 1

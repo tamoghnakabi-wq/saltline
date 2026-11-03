@@ -1,0 +1,551 @@
+{
+ "sampleRate": 48000,
+ "sounds": [
+  {
+   "name": "shot_ar",
+   "group": "weapon",
+   "variants": 3,
+   "seconds": [
+    1.147,
+    1.156,
+    1.142
+   ],
+   "lufs": -10.2
+  },
+  {
+   "name": "shot_ar_far",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    1.274,
+    1.257
+   ],
+   "lufs": -6.6
+  },
+  {
+   "name": "shot_smg",
+   "group": "weapon",
+   "variants": 3,
+   "seconds": [
+    0.837,
+    0.839,
+    0.839
+   ],
+   "lufs": -12.7
+  },
+  {
+   "name": "shot_smg_far",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    0.999,
+    0.982
+   ],
+   "lufs": -9.6
+  },
+  {
+   "name": "shot_shotgun",
+   "group": "weapon",
+   "variants": 3,
+   "seconds": [
+    1.936,
+    1.95,
+    1.937
+   ],
+   "lufs": -8.0
+  },
+  {
+   "name": "shot_shotgun_far",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    2.0,
+    2.0
+   ],
+   "lufs": -4.8
+  },
+  {
+   "name": "shot_sniper",
+   "group": "weapon",
+   "variants": 3,
+   "seconds": [
+    2.523,
+    2.509,
+    2.47
+   ],
+   "lufs": -7.0
+  },
+  {
+   "name": "shot_sniper_far",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    2.6,
+    2.6
+   ],
+   "lufs": -4.1
+  },
+  {
+   "name": "shot_pistol",
+   "group": "weapon",
+   "variants": 3,
+   "seconds": [
+    0.926,
+    0.927,
+    0.93
+   ],
+   "lufs": -12.9
+  },
+  {
+   "name": "shot_pistol_far",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    0.952,
+    0.957
+   ],
+   "lufs": -9.3
+  },
+  {
+   "name": "mag_out",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.3
+   ],
+   "lufs": -25.1
+  },
+  {
+   "name": "mag_in",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.35
+   ],
+   "lufs": -25.6
+  },
+  {
+   "name": "shell_in",
+   "group": "weapon",
+   "variants": 2,
+   "seconds": [
+    0.2,
+    0.2
+   ],
+   "lufs": -22.9
+  },
+  {
+   "name": "pump_back",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.22
+   ],
+   "lufs": -24.6
+  },
+  {
+   "name": "pump_fwd",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.2
+   ],
+   "lufs": -24.7
+  },
+  {
+   "name": "bolt_up",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.12
+   ],
+   "lufs": -22.1
+  },
+  {
+   "name": "bolt_back",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.18
+   ],
+   "lufs": -23.5
+  },
+  {
+   "name": "bolt_fwd",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.15
+   ],
+   "lufs": -23.9
+  },
+  {
+   "name": "bolt_down",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.12
+   ],
+   "lufs": -20.7
+  },
+  {
+   "name": "charge_back",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.15
+   ],
+   "lufs": -22.8
+  },
+  {
+   "name": "charge_release",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.2
+   ],
+   "lufs": -23.8
+  },
+  {
+   "name": "slide_release",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.18
+   ],
+   "lufs": -21.2
+  },
+  {
+   "name": "dry_fire",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.12
+   ],
+   "lufs": -20.3
+  },
+  {
+   "name": "equip",
+   "group": "weapon",
+   "variants": 1,
+   "seconds": [
+    0.4
+   ],
+   "lufs": -25.0
+  },
+  {
+   "name": "step_concrete",
+   "group": "player",
+   "variants": 4,
+   "seconds": [
+    0.148,
+    0.15,
+    0.149,
+    0.146
+   ],
+   "lufs": -21.8
+  },
+  {
+   "name": "step_metal",
+   "group": "player",
+   "variants": 4,
+   "seconds": [
+    0.218,
+    0.223,
+    0.217,
+    0.214
+   ],
+   "lufs": -24.0
+  },
+  {
+   "name": "step_gravel",
+   "group": "player",
+   "variants": 4,
+   "seconds": [
+    0.138,
+    0.142,
+    0.141,
+    0.145
+   ],
+   "lufs": -20.9
+  },
+  {
+   "name": "step_wood",
+   "group": "player",
+   "variants": 3,
+   "seconds": [
+    0.086,
+    0.087,
+    0.084
+   ],
+   "lufs": -23.9
+  },
+  {
+   "name": "step_water",
+   "group": "player",
+   "variants": 3,
+   "seconds": [
+    0.22,
+    0.22,
+    0.22
+   ],
+   "lufs": -19.7
+  },
+  {
+   "name": "jump",
+   "group": "player",
+   "variants": 1,
+   "seconds": [
+    0.25
+   ],
+   "lufs": -24.2
+  },
+  {
+   "name": "land",
+   "group": "player",
+   "variants": 2,
+   "seconds": [
+    0.317,
+    0.318
+   ],
+   "lufs": -21.0
+  },
+  {
+   "name": "slide_loop",
+   "group": "player",
+   "variants": 1,
+   "seconds": [
+    0.8
+   ],
+   "lufs": -19.4
+  },
+  {
+   "name": "hurt",
+   "group": "player",
+   "variants": 2,
+   "seconds": [
+    0.14,
+    0.14
+   ],
+   "lufs": -20.1
+  },
+  {
+   "name": "death",
+   "group": "player",
+   "variants": 1,
+   "seconds": [
+    0.625
+   ],
+   "lufs": -23.4
+  },
+  {
+   "name": "impact_concrete",
+   "group": "impact",
+   "variants": 3,
+   "seconds": [
+    0.336,
+    0.261,
+    0.371
+   ],
+   "lufs": -22.7
+  },
+  {
+   "name": "impact_metal",
+   "group": "impact",
+   "variants": 3,
+   "seconds": [
+    0.6,
+    0.6,
+    0.6
+   ],
+   "lufs": -20.5
+  },
+  {
+   "name": "impact_thinmetal",
+   "group": "impact",
+   "variants": 2,
+   "seconds": [
+    0.52,
+    0.52
+   ],
+   "lufs": -22.3
+  },
+  {
+   "name": "impact_wood",
+   "group": "impact",
+   "variants": 2,
+   "seconds": [
+    0.22,
+    0.22
+   ],
+   "lufs": -20.4
+  },
+  {
+   "name": "impact_dirt",
+   "group": "impact",
+   "variants": 2,
+   "seconds": [
+    0.317,
+    0.319
+   ],
+   "lufs": -24.6
+  },
+  {
+   "name": "impact_water",
+   "group": "impact",
+   "variants": 2,
+   "seconds": [
+    0.37,
+    0.37
+   ],
+   "lufs": -19.6
+  },
+  {
+   "name": "impact_glass",
+   "group": "impact",
+   "variants": 1,
+   "seconds": [
+    0.52
+   ],
+   "lufs": -16.1
+  },
+  {
+   "name": "impact_flesh",
+   "group": "impact",
+   "variants": 2,
+   "seconds": [
+    0.14,
+    0.14
+   ],
+   "lufs": -20.3
+  },
+  {
+   "name": "whizz",
+   "group": "impact",
+   "variants": 3,
+   "seconds": [
+    0.35,
+    0.35,
+    0.35
+   ],
+   "lufs": -17.7
+  },
+  {
+   "name": "hitmarker",
+   "group": "feedback",
+   "variants": 1,
+   "seconds": [
+    0.05
+   ],
+   "lufs": -18.6
+  },
+  {
+   "name": "headshot",
+   "group": "feedback",
+   "variants": 1,
+   "seconds": [
+    0.5
+   ],
+   "lufs": -17.5
+  },
+  {
+   "name": "kill",
+   "group": "feedback",
+   "variants": 1,
+   "seconds": [
+    0.7
+   ],
+   "lufs": -15.9
+  },
+  {
+   "name": "ui_hover",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    0.04
+   ],
+   "lufs": -21.4
+  },
+  {
+   "name": "ui_click",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    0.06
+   ],
+   "lufs": -22.6
+  },
+  {
+   "name": "ui_back",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    0.3
+   ],
+   "lufs": -19.1
+  },
+  {
+   "name": "ui_ready",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    0.44
+   ],
+   "lufs": -19.0
+  },
+  {
+   "name": "countdown",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    0.25
+   ],
+   "lufs": -18.9
+  },
+  {
+   "name": "match_start",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    2.08
+   ],
+   "lufs": -15.3
+  },
+  {
+   "name": "victory",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    2.24
+   ],
+   "lufs": -15.1
+  },
+  {
+   "name": "defeat",
+   "group": "ui",
+   "variants": 1,
+   "seconds": [
+    2.4
+   ],
+   "lufs": -13.9
+  },
+  {
+   "name": "amb_coast",
+   "group": "ambience",
+   "variants": 1,
+   "seconds": [
+    32.0
+   ],
+   "lufs": -18.6
+  },
+  {
+   "name": "amb_hum",
+   "group": "ambience",
+   "variants": 1,
+   "seconds": [
+    12.0
+   ],
+   "lufs": -19.8
+  }
+ ]
+}

@@ -39,6 +39,11 @@ namespace Saltline.Combat
         public float Spread;
         public uint ShotNumber;
         public byte WeaponId;
+        /// <summary>
+        /// Bit i set: the host found that pellet i hit a player. Only meaningful on shots sent by the
+        /// host (remote shots); a player's own predicted shot leaves it 0.
+        /// </summary>
+        public uint PelletHits;
     }
 
     /// <summary>

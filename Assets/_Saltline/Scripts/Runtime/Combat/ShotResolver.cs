@@ -25,6 +25,8 @@ namespace Saltline.Combat
         public Vector3 Point;
         public Vector3 Normal;
         public SurfaceType Surface;
+        /// <summary>The bullet hit a player rather than the world.</summary>
+        public bool Body;
     }
 
     /// <summary>

@@ -11,7 +11,7 @@ namespace Saltline.Core
 
         /// <summary>Semantic game version shown in menus, release names and the update check.</summary>
         public const string Version = "0.1.0";
-        public const int NetProtocol = 3; // 3: Milestone 3 match flow (MatchDirector on the session object)
+        public const int NetProtocol = 4; // 3: match flow (MatchDirector on the session object); 4: ShotFx.PelletHits
         public const string SessionType = "saltline_tdm";
         public const int MaxPlayers = 8;
         public const int MaxPerTeam = 4;

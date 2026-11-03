@@ -93,6 +93,9 @@ namespace Saltline.UI
                     break;
                 case Tab.Audio:
                     GameSettings.MasterVolume = 0.9f;
+                    GameSettings.EffectsVolume = 1f;
+                    GameSettings.InterfaceVolume = 0.8f;
+                    GameSettings.AmbienceVolume = 0.8f;
                     break;
                 case Tab.Controls:
                     GameInput.Instance.ResetBindings();
@@ -193,6 +196,12 @@ namespace Saltline.UI
         {
             Section(c, "VOLUME");
             SliderRow(c, "Master volume", 0f, 1f, GameSettings.MasterVolume, v => $"{Mathf.RoundToInt(v * 100)}%", v => { GameSettings.MasterVolume = v; AudioListener.volume = v; });
+            SliderRow(c, "Effects", 0f, 1f, GameSettings.EffectsVolume, v => $"{Mathf.RoundToInt(v * 100)}%", v => GameSettings.EffectsVolume = v,
+                "Weapons, footsteps, impacts and hit sounds");
+            SliderRow(c, "Interface", 0f, 1f, GameSettings.InterfaceVolume, v => $"{Mathf.RoundToInt(v * 100)}%", v => GameSettings.InterfaceVolume = v,
+                "Menu sounds and match stings");
+            SliderRow(c, "Ambience", 0f, 1f, GameSettings.AmbienceVolume, v => $"{Mathf.RoundToInt(v * 100)}%", v => GameSettings.AmbienceVolume = v,
+                "Wind, sea and machinery");
         }
 
         // ================================================================== controls

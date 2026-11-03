@@ -596,11 +596,13 @@ namespace Saltline.Player
 
             s_ShotDamage.Clear();
             int pellets = Mathf.Max(1, def.pellets);
+            uint pelletHits = 0;
             for (int i = 0; i < pellets; i++)
             {
                 Vector3 dir = WeaponSim.PelletDirection(aim, shot.SpreadDegrees, OwnerClientId, shot.ShotNumber, i);
                 if (!ShotResolver.TracePellet(eye, dir, def, config.motor, s_Targets, out var hit, null, out _)) continue;
                 ServerPelletsHit++;
+                if (i < 32) pelletHits |= 1u << i;
                 float dmg = DamageModel.PelletDamage(def, hit.Region, hit.Distance, hit.PenetrationFactor);
                 s_ShotDamage.TryGetValue(hit.Victim, out var acc);
                 s_ShotDamage[hit.Victim] = (acc.damage + dmg, acc.head || hit.Region == HitRegion.Head, acc.pen || hit.PenetrationFactor < 0.999f);
@@ -612,7 +614,10 @@ namespace Saltline.Player
                 if (victim != null) victim.ServerApplyDamage(this, DamageModel.ToHealth(kv.Value.damage), def.id, kv.Value.head, kv.Value.pen, eye);
             }
 
-            ShotFxRpc(fx);
+            // Everyone else draws the shot from the host's answer, not from where they see the target now.
+            var sent = fx;
+            sent.PelletHits = pelletHits;
+            ShotFxRpc(sent);
         }
 
         [Rpc(SendTo.NotOwner, Delivery = RpcDelivery.Unreliable)]

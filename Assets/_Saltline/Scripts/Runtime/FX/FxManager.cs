@@ -297,30 +297,51 @@ namespace Saltline.FX
             int tracers = pellets > 1 ? Mathf.Min(pellets, 5) : 1;
             bool drawTracer = pellets > 1 || w.tracerEvery <= 1 || fx.ShotNumber % (uint)w.tracerEvery == 0;
             float impactScale = pellets > 1 ? 0.55f : 1f;
+            // A remote shot comes from the host after it resolved it, rewound to where the shooter saw
+            // the targets. This machine draws the targets where they are now, so a fresh test can
+            // disagree (the victim strafed on); the host's answer decides hit or miss.
+            bool resolved = !local;
             for (int i = 0; i < pellets; i++)
             {
                 Vector3 dir = WeaponSim.PelletDirection(aim, fx.Spread, fx.Shooter, fx.ShotNumber, i);
-                float range = w.maxRange;
-                Vector3 end = fx.Origin + dir * range;
-                bool env = ShotResolver.EnvironmentRay(fx.Origin, dir, range, out var h);
-                if (env) { end = h.point; range = h.distance; }
-                bool player = false;
+                bool env = ShotResolver.EnvironmentRay(fx.Origin, dir, w.maxRange, out var h);
+                float envRange = env ? h.distance : w.maxRange;
+                NetPlayer victim = null;
+                float tVictim = envRange;
                 foreach (var p in NetPlayer.All)
                 {
                     if (p == null || p.OwnerClientId == fx.Shooter || !p.Render.Alive) continue;
                     var hp = p.Render.ToHitbox();
-                    if (!HitboxModel.RayNearPlayer(fx.Origin, dir, hp, range)) continue;
+                    if (!HitboxModel.RayNearPlayer(fx.Origin, dir, hp, tVictim)) continue;
                     HitboxModel.Build(hp, p.MotorConfig, s_Caps);
-                    if (HitboxModel.Raycast(fx.Origin, dir, s_Caps, range, out float t, out _))
+                    if (HitboxModel.Raycast(fx.Origin, dir, s_Caps, tVictim, out float t, out _)) { victim = p; tVictim = t; }
+                }
+                if (resolved)
+                {
+                    bool hostHit = i < 32 && (fx.PelletHits & (1u << i)) != 0;
+                    if (!hostHit) victim = null; // drawn across someone the host says it missed: it flies on
+                    else if (victim == null) victim = ClosestToRay(fx.Origin, dir, fx.Shooter, envRange, out tVictim);
+                }
+
+                Vector3 end;
+                if (victim != null)
+                {
+                    end = fx.Origin + dir * tVictim;
+                    // Our own body is not drawn in first person, and the hurt sound already says we were hit.
+                    if (!victim.IsOwner)
                     {
-                        range = t;
-                        end = fx.Origin + dir * t;
-                        env = false;
-                        player = true;
+                        BodyHit(end, dir, impactScale);
+                        CombatEvents.RaiseImpact(new Saltline.Combat.Impact { Point = end, Normal = -dir, Body = true });
                     }
                 }
-                if (env) Impact(h.point, h.normal, dir, SurfaceTag.TypeOf(h.collider), impactScale);
-                else if (player) BodyHit(end, dir, impactScale);
+                else if (env)
+                {
+                    end = h.point;
+                    var surface = SurfaceTag.TypeOf(h.collider);
+                    Impact(h.point, h.normal, dir, surface, impactScale);
+                    CombatEvents.RaiseImpact(new Saltline.Combat.Impact { Point = h.point, Normal = h.normal, Surface = surface });
+                }
+                else end = fx.Origin + dir * w.maxRange;
                 if (drawTracer && i < tracers) SpawnTracer(muzzle, end, w);
             }
 
@@ -576,6 +597,28 @@ namespace Saltline.FX
         }
 
         /// <summary>A bullet striking a player: a brief dark-red mist and a few droplets. No decals.</summary>
+        /// <summary>
+        /// The living player (not the shooter) whose chest the ray passes closest to, and the distance
+        /// along the ray to that point: where to show a hit the host confirmed but this machine draws
+        /// the victim elsewhere.
+        /// </summary>
+        public static NetPlayer ClosestToRay(Vector3 origin, Vector3 dir, ulong shooter, float maxT, out float t)
+        {
+            NetPlayer best = null;
+            float bestMiss = float.MaxValue;
+            t = maxT;
+            foreach (var p in NetPlayer.All)
+            {
+                if (p == null || p.OwnerClientId == shooter || !p.Render.Alive) continue;
+                var r = p.Render;
+                Vector3 chest = r.Feet + Vector3.up * (r.Height * 0.7f);
+                float along = Mathf.Clamp(Vector3.Dot(chest - origin, dir), 0f, maxT);
+                float miss = Vector3.Distance(origin + dir * along, chest);
+                if (miss < bestMiss) { bestMiss = miss; best = p; t = along; }
+            }
+            return best;
+        }
+
         public void BodyHit(Vector3 point, Vector3 dir, float scale = 1f)
         {
             int puffs = N(3f * scale);

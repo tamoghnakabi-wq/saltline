@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real Unity Relay multiplayer tests using headless player builds (no editor).
 #
-#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combatlag|combatnolag|match|kappamatch|matchdraw|ui|net|gameplay|all] [binary]
+#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combataudio|combatlag|combatnolag|match|kappamatch|matchdraw|ui|net|gameplay|all] [binary]
 #
 # Each test starts separate game processes, each signed in as its own anonymous Unity
 # player (-profile), and communicating only through Unity Relay. Results land in
@@ -113,6 +113,17 @@ run_combat() { # name "host args" "client args"
 }
 # Movement prediction + authoritative hits over Relay (bots on both sides).
 test_combat() { run_combat combat "" ""; }
+# The combat test with a host that renders and records what it hears (-audiocapture): the client
+# walks, then fires at the host, then the host fires back, so footsteps, near and far shots,
+# whizzes, impacts, hit and kill sounds all play. The play counts are in host.log; mix.wav is the mix.
+test_combataudio() {
+  local R="$PWD/AutoTest/combataudio_$(date +%H%M%S)"; mkdir -p "$R/frames"
+  ( exec "$APP" -batchmode -autotest combat-host -capture "$R/frames" -captureevery 8 -capturesize 960x540 -audiocapture "$R/mix.wav" -profile t_host -codefile "$R/code.txt" -testtimeout 240 -respawndelay 2 -spawnprotect 1 -testout "$R/host.json" -logFile "$R/host.log" >/dev/null 2>&1 ) & local H=$!
+  player -autotest combat-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 240 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
+  wait $C; wait $H
+  summary "$R"
+  [ "$(result_of "$R/host.json")" = "PASS" ] && [ "$(result_of "$R/c1.json")" = "PASS" ] && record combataudio PASS || record combataudio FAIL
+}
 # Same with +50 ms each way, 10 ms jitter, 1% loss on the client (about 170 ms round trip over Relay):
 # a poor but common connection. Lag compensation must keep hits registering. The rewind needed is
 # roughly round trip + interpolation, which stays inside the host's 350 ms rewind cap.
@@ -151,7 +162,7 @@ test_matchdraw() {
 # saves a composited picture of every screen; a headless client joins, readies and plays along.
 test_ui() {
   local R="$PWD/AutoTest/ui_$(date +%H%M%S)"; mkdir -p "$R/shots"
-  ( exec "$APP" -batchmode -uitest host -capture "$R/shots" -profile t_host -codefile "$R/code.txt" -testtimeout 240 -warmup 4 -scorelimit 3 -timelimit 120 -resultstime 6 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -logFile "$R/host.log" >/dev/null 2>&1 ) & local H=$!
+  ( exec "$APP" -batchmode -uitest host -capture "$R/shots" -profile t_host -codefile "$R/code.txt" -testtimeout 240 -warmup 4 -scorelimit 3 -timelimit 120 -resultstime 6 -respawndelay 1 -spawnprotect 0.5 -testout "$R/host.json" -audiocapture "$R/mix.wav" -logFile "$R/host.log" >/dev/null 2>&1 ) & local H=$!
   player -autotest match-client -profile t_c1 -codefile "$R/code.txt" -testtimeout 240 -testout "$R/c1.json" -logFile "$R/c1.log" & local C=$!
   wait $C; wait $H
   summary "$R"
@@ -165,6 +176,7 @@ case "$WHICH" in
   hostquit) test_hostquit ;;
   latency) test_latency ;;
   combat) test_combat ;;
+  combataudio) test_combataudio ;;
   combatlag) test_combatlag ;;
   combatnolag) test_combatnolag ;;
   match) test_match ;;

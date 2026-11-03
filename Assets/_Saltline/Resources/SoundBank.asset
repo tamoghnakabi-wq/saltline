@@ -1,0 +1,673 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: add3b6930fa5f4aad86b708cf5813264, type: 3}
+  m_Name: SoundBank
+  m_EditorClassIdentifier: Saltline.Runtime::Saltline.Audio.SoundBank
+  sounds:
+  - name: shot_ar
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: ede63f859cf8b4549a763033ecf13f01, type: 3}
+    - {fileID: 8300000, guid: d3dd7a72e4b65402d9cd4e3d01345036, type: 3}
+    - {fileID: 8300000, guid: 5f3bb4cd3f5434c3caf43d1170b5090e, type: 3}
+    volume: 0.57543993
+    pitchJitter: 0.03
+    minDistance: 6
+    maxDistance: 140
+    maxVoices: 8
+    priority: 5
+    measuredLufs: -10.2
+  - name: shot_ar_far
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: a9e648a7d3b5449a1a8dc69ea347fa34, type: 3}
+    - {fileID: 8300000, guid: 88faac31aa21f4ab99065bf3bc92312b, type: 3}
+    volume: 0.26915348
+    pitchJitter: 0.04
+    minDistance: 25
+    maxDistance: 400
+    maxVoices: 6
+    priority: 4
+    measuredLufs: -6.6
+  - name: shot_smg
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 8e048de5827aa4e33b09fc7db4a58d87, type: 3}
+    - {fileID: 8300000, guid: d5629b14fdb7840b5bceefb43aaff9a8, type: 3}
+    - {fileID: 8300000, guid: dd999ba66cc354241b0036faf15aef77, type: 3}
+    volume: 0.6095369
+    pitchJitter: 0.03
+    minDistance: 6
+    maxDistance: 140
+    maxVoices: 8
+    priority: 5
+    measuredLufs: -12.7
+  - name: shot_smg_far
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 563e74f389e1c42e194b5f283f5cda7e, type: 3}
+    - {fileID: 8300000, guid: 5dad87510508a4d1b8307517179125ac, type: 3}
+    volume: 0.3019952
+    pitchJitter: 0.04
+    minDistance: 25
+    maxDistance: 400
+    maxVoices: 6
+    priority: 4
+    measuredLufs: -9.6
+  - name: shot_shotgun
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 80e4ed06ccba5441aa30ba4975ada731, type: 3}
+    - {fileID: 8300000, guid: 984bf792cf1e944a9bdac7975cb02a3c, type: 3}
+    - {fileID: 8300000, guid: 048a948a9a7cd42aa89b8799bcd5dc5e, type: 3}
+    volume: 0.5011872
+    pitchJitter: 0.03
+    minDistance: 6
+    maxDistance: 140
+    maxVoices: 8
+    priority: 5
+    measuredLufs: -8
+  - name: shot_shotgun_far
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 33c7a0d25b4944d1bacfc6213dd74df5, type: 3}
+    - {fileID: 8300000, guid: d917b7cb1fb2741eaa05756f980156d8, type: 3}
+    volume: 0.24547088
+    pitchJitter: 0.04
+    minDistance: 25
+    maxDistance: 400
+    maxVoices: 6
+    priority: 4
+    measuredLufs: -4.8
+  - name: shot_sniper
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 8f1d4092040ea4e17bfcbc701c1e2073, type: 3}
+    - {fileID: 8300000, guid: 3d37158ef1a11477f850a76a37c85492, type: 3}
+    - {fileID: 8300000, guid: d6b2c18392dd1419c851f5617db34999, type: 3}
+    volume: 0.5011872
+    pitchJitter: 0.03
+    minDistance: 6
+    maxDistance: 140
+    maxVoices: 8
+    priority: 5
+    measuredLufs: -7
+  - name: shot_sniper_far
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 17085b10712754ab0abf040321c9eb3b, type: 3}
+    - {fileID: 8300000, guid: 026d5afc60e1d4196a9dd9239047f334, type: 3}
+    volume: 0.25409725
+    pitchJitter: 0.04
+    minDistance: 25
+    maxDistance: 400
+    maxVoices: 6
+    priority: 4
+    measuredLufs: -4.1
+  - name: shot_pistol
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 4e410c1f433b645fc9124ab936d4db9e, type: 3}
+    - {fileID: 8300000, guid: aea5f7b789fdb4d7fa43123575fd70a8, type: 3}
+    - {fileID: 8300000, guid: 1e974462a7a7f41ffb3b5328dd1012a5, type: 3}
+    volume: 0.62373483
+    pitchJitter: 0.03
+    minDistance: 6
+    maxDistance: 140
+    maxVoices: 8
+    priority: 5
+    measuredLufs: -12.9
+  - name: shot_pistol_far
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: ab83946d142fe4a4a89501240cb7694e, type: 3}
+    - {fileID: 8300000, guid: a06be4d756a824e35b1835b17824a392, type: 3}
+    volume: 0.2917427
+    pitchJitter: 0.04
+    minDistance: 25
+    maxDistance: 400
+    maxVoices: 6
+    priority: 4
+    measuredLufs: -9.3
+  - name: mag_out
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 1bbfbbde389304d5b9963c77a9fb8d2e, type: 3}
+    volume: 0.80352616
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -25.1
+  - name: mag_in
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 2fed0ff4ea54148fcbda583574af29eb, type: 3}
+    volume: 0.85113806
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -25.6
+  - name: shell_in
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 24421aba169bb46008a93b5b2ea07ed2, type: 3}
+    - {fileID: 8300000, guid: 87e13b8f4aa594d8dbc811cef5e6cadb, type: 3}
+    volume: 0.62373483
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -22.9
+  - name: pump_back
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 457474c7851644f1fbb1fce845cdbcd5, type: 3}
+    volume: 0.7585776
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -24.6
+  - name: pump_fwd
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: bcbca1ea453554af1861438aab87c615, type: 3}
+    volume: 0.7673615
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -24.7
+  - name: bolt_up
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: dce16f7c3a8d4484c8caa58d8f677a0b, type: 3}
+    volume: 0.56885296
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -22.1
+  - name: bolt_back
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: a87dd3c8d83244a0a9a69d78a2dad398, type: 3}
+    volume: 0.6683439
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -23.5
+  - name: bolt_fwd
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 0eba64c43f99c4fa1b8d4b59bf861ff3, type: 3}
+    volume: 0.699842
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -23.9
+  - name: bolt_down
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: ca6c21f67c1f94bb1891083a18b6d715, type: 3}
+    volume: 0.4841724
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -20.7
+  - name: charge_back
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: bb652b12e83924eed8dc40b82bf600f0, type: 3}
+    volume: 0.616595
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -22.8
+  - name: charge_release
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: ac69f3b82a57944ae998f5e795146d70, type: 3}
+    volume: 0.69183093
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -23.8
+  - name: slide_release
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 0e1b84eac92b5489bac6f0721ceaf48e, type: 3}
+    volume: 0.51286143
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -21.2
+  - name: dry_fire
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: 109276611baad4730a93c6af5c4ee0b5, type: 3}
+    volume: 0.46238098
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -20.3
+  - name: equip
+    group: 0
+    clips:
+    - {fileID: 8300000, guid: a1803a6da6a2f4d768cc4767c24da5f9, type: 3}
+    volume: 0.7943282
+    pitchJitter: 0.03
+    minDistance: 1
+    maxDistance: 15
+    maxVoices: 4
+    priority: 2
+    measuredLufs: -25
+  - name: step_concrete
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: c55fa733736384a8b833f6f651c375a3, type: 3}
+    - {fileID: 8300000, guid: deea79bce149f4a368877f6d54356df0, type: 3}
+    - {fileID: 8300000, guid: 37d57b8df43344efbbcc69388d796cf6, type: 3}
+    - {fileID: 8300000, guid: ecdd5e53a8b6e4e9a90a172f5402eb34, type: 3}
+    volume: 0.69183093
+    pitchJitter: 0.06
+    minDistance: 2
+    maxDistance: 32
+    maxVoices: 10
+    priority: 3
+    measuredLufs: -21.8
+  - name: step_metal
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: 2f26b270ebd6841749650195b4a0b6e2, type: 3}
+    - {fileID: 8300000, guid: 93ce63999c353467ea3d4c323110a5f4, type: 3}
+    - {fileID: 8300000, guid: d0de8b32baff7432ab4ea5b2cb1cf6e7, type: 3}
+    - {fileID: 8300000, guid: d868bd9f6728e494ba4e61ae1f5a003a, type: 3}
+    volume: 0.8912509
+    pitchJitter: 0.06
+    minDistance: 2
+    maxDistance: 32
+    maxVoices: 10
+    priority: 3
+    measuredLufs: -24
+  - name: step_gravel
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: 7ebabc834d7ca4421b7ff337b1064366, type: 3}
+    - {fileID: 8300000, guid: b7b024c97a6cd4799b1063580bd6ed28, type: 3}
+    - {fileID: 8300000, guid: 033036dce75ed446b86ebd83b70ed392, type: 3}
+    - {fileID: 8300000, guid: 38be417bbeaaa4111ad3fb4f5f6a7dba, type: 3}
+    volume: 0.62373483
+    pitchJitter: 0.06
+    minDistance: 2
+    maxDistance: 32
+    maxVoices: 10
+    priority: 3
+    measuredLufs: -20.9
+  - name: step_wood
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: e4074c7ca5079480bb5048baf2937d4c, type: 3}
+    - {fileID: 8300000, guid: 8de6254cccc904299ab11c3ff518e35d, type: 3}
+    - {fileID: 8300000, guid: 4b0462d96e1cb4e2caba8fde3ac2adcc, type: 3}
+    volume: 0.88104886
+    pitchJitter: 0.06
+    minDistance: 2
+    maxDistance: 32
+    maxVoices: 10
+    priority: 3
+    measuredLufs: -23.9
+  - name: step_water
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: a9b012d9591974d7ab02d16be06d1284, type: 3}
+    - {fileID: 8300000, guid: 35636262dcbee416989475297a2f7c0b, type: 3}
+    - {fileID: 8300000, guid: 2cb71eed184f9481a9e3d5b285a9b572, type: 3}
+    volume: 0.5432504
+    pitchJitter: 0.06
+    minDistance: 2
+    maxDistance: 32
+    maxVoices: 10
+    priority: 3
+    measuredLufs: -19.7
+  - name: jump
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: 84eea03d4b8fb4c9dbe7eb7cb6ebc008, type: 3}
+    volume: 0.64565426
+    pitchJitter: 0.05
+    minDistance: 2
+    maxDistance: 20
+    maxVoices: 3
+    priority: 2
+    measuredLufs: -24.2
+  - name: land
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: bec07bad7041744c982a5b72b4a73c24, type: 3}
+    - {fileID: 8300000, guid: 812cd7c3486044e6f8707481f766eb5f, type: 3}
+    volume: 0.7943282
+    pitchJitter: 0.05
+    minDistance: 2
+    maxDistance: 30
+    maxVoices: 4
+    priority: 3
+    measuredLufs: -21
+  - name: slide_loop
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: 44969def196f044c6bdfb712340d90ff, type: 3}
+    volume: 0.46773514
+    pitchJitter: 0.04
+    minDistance: 2
+    maxDistance: 30
+    maxVoices: 3
+    priority: 3
+    measuredLufs: -19.4
+  - name: hurt
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: 45b890441f4184815a51f403e5637550, type: 3}
+    - {fileID: 8300000, guid: ed20153e0304347579bd679ce4cb888e, type: 3}
+    volume: 0.90157115
+    pitchJitter: 0.06
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -20.1
+  - name: death
+    group: 1
+    clips:
+    - {fileID: 8300000, guid: b3c77c9c4fa654cf5b63470e8f385b19, type: 3}
+    volume: 0.93325424
+    pitchJitter: 0.04
+    minDistance: 3
+    maxDistance: 45
+    maxVoices: 3
+    priority: 4
+    measuredLufs: -23.4
+  - name: impact_concrete
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 95d1cf4126c9347ca99fa47ea330ee44, type: 3}
+    - {fileID: 8300000, guid: 5d0990c84c68a4bde9913045899e7f44, type: 3}
+    - {fileID: 8300000, guid: edade72247b994334a243af89f5748cf, type: 3}
+    volume: 0.7673615
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -22.7
+  - name: impact_metal
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 919aa45b2cdee4d7c804246a6e9a033b, type: 3}
+    - {fileID: 8300000, guid: dc9643fa5d0774e138d8be2d27c90ce9, type: 3}
+    - {fileID: 8300000, guid: 2d1366a9b691e43e381013d941ff8a53, type: 3}
+    volume: 0.5956622
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -20.5
+  - name: impact_thinmetal
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 26ad24d9854a340c68a16767e2906a2c, type: 3}
+    - {fileID: 8300000, guid: e27083e7649344af08359ebf18b94985, type: 3}
+    volume: 0.73282444
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -22.3
+  - name: impact_wood
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 1005aee413d474a1f8ee0dbbc36f7de1, type: 3}
+    - {fileID: 8300000, guid: 5c9259ff9221443ffadc777955afdb8f, type: 3}
+    volume: 0.58884364
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -20.4
+  - name: impact_dirt
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: c5c8b0377591f4c7abab986ba5b2ba82, type: 3}
+    - {fileID: 8300000, guid: 6b50f8fb4688b4acaa76d1bc29ffade2, type: 3}
+    volume: 0.95499265
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -24.6
+  - name: impact_water
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 380acb4501cae4bbeb20ee24143678a0, type: 3}
+    - {fileID: 8300000, guid: 4ce14fdbea24f4920be96a45440c97f7, type: 3}
+    volume: 0.5370318
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -19.6
+  - name: impact_glass
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 82ba806d6175a4d60a4d5677066e1a23, type: 3}
+    volume: 0.35892195
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 45
+    maxVoices: 6
+    priority: 2
+    measuredLufs: -16.1
+  - name: impact_flesh
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 8135b76abefd244919f658c4f2029893, type: 3}
+    - {fileID: 8300000, guid: 2d28f2635469f4019a8ed4a640fe0754, type: 3}
+    volume: 0.82224256
+    pitchJitter: 0.08
+    minDistance: 2
+    maxDistance: 40
+    maxVoices: 4
+    priority: 3
+    measuredLufs: -20.3
+  - name: whizz
+    group: 2
+    clips:
+    - {fileID: 8300000, guid: 42b18f5fbf35641838b4283c7938938c, type: 3}
+    - {fileID: 8300000, guid: 595953b63840e4a84bcb1fe0b3c96eac, type: 3}
+    - {fileID: 8300000, guid: 0eea2e5472c7d46738247f9c1b8e26e7, type: 3}
+    volume: 0.966051
+    pitchJitter: 0.06
+    minDistance: 1
+    maxDistance: 8
+    maxVoices: 3
+    priority: 4
+    measuredLufs: -17.7
+  - name: hitmarker
+    group: 3
+    clips:
+    - {fileID: 8300000, guid: 99a06c8d7ccf048c9828d7c907e60d23, type: 3}
+    volume: 0.5370318
+    pitchJitter: 0.02
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -18.6
+  - name: headshot
+    group: 3
+    clips:
+    - {fileID: 8300000, guid: c6d21a62641d14fe6ad3d56ea1e8a980, type: 3}
+    volume: 0.6683439
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -17.5
+  - name: kill
+    group: 3
+    clips:
+    - {fileID: 8300000, guid: e80bb3d3801904c5dbed008c8133691b, type: 3}
+    volume: 0.62373483
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -15.9
+  - name: ui_hover
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: c941117e8bc1f4d42829ba5a7781aa56, type: 3}
+    volume: 0.2951209
+    pitchJitter: 0.02
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -21.4
+  - name: ui_click
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: 32134a031288a4a7ba4587f6f50878a8, type: 3}
+    volume: 0.5370318
+    pitchJitter: 0.02
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -22.6
+  - name: ui_back
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: c645b43850d014e7096cf814fc265ae2, type: 3}
+    volume: 0.35892195
+    pitchJitter: 0.02
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -19.1
+  - name: ui_ready
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: 4812c975234cf438c98e153db7704219, type: 3}
+    volume: 0.4466836
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -19
+  - name: countdown
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: 93742ca9e5f8d41f59567061961863dd, type: 3}
+    volume: 0.5559042
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 2
+    priority: 6
+    measuredLufs: -18.9
+  - name: match_start
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: d740aee0d36384fc98b16ee895503685, type: 3}
+    volume: 0.58210325
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 1
+    priority: 7
+    measuredLufs: -15.3
+  - name: victory
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: 9cc1ce6ad4c064fa9b6d3592753fd7f2, type: 3}
+    volume: 0.56885296
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 1
+    priority: 7
+    measuredLufs: -15.1
+  - name: defeat
+    group: 4
+    clips:
+    - {fileID: 8300000, guid: 99ea4c46493194bf2be42f74597e4142, type: 3}
+    volume: 0.49545017
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 1
+    priority: 7
+    measuredLufs: -13.9
+  - name: amb_coast
+    group: 5
+    clips:
+    - {fileID: 8300000, guid: a063b886154d64966a8c3a84c5696972, type: 3}
+    volume: 0.26915348
+    pitchJitter: 0
+    minDistance: 1
+    maxDistance: 10
+    maxVoices: 1
+    priority: 0
+    measuredLufs: -18.6
+  - name: amb_hum
+    group: 5
+    clips:
+    - {fileID: 8300000, guid: 339f08b4a9d654eaaaf4eff0a46bbc11, type: 3}
+    volume: 0.4897788
+    pitchJitter: 0
+    minDistance: 4
+    maxDistance: 30
+    maxVoices: 1
+    priority: 0
+    measuredLufs: -19.8

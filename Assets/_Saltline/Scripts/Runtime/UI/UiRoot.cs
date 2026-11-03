@@ -83,6 +83,7 @@ namespace Saltline.UI
             m_Root.Clear();
             m_Root.AddToClassList("sl-root");
             m_Root.pickingMode = PickingMode.Ignore;
+            Saltline.Audio.GameAudio.HookUi(m_Root);
 
             m_ScreenLayer = Layer("screens");
             m_HudLayer = Layer("hud");

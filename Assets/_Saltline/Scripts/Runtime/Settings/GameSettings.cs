@@ -27,6 +27,12 @@ namespace Saltline.Settings
         public static bool StartInThirdPerson { get => B("tps", false); set => SetB("tps", value); }
         public static bool CameraBob { get => B("bob", true); set => SetB("bob", value); }
         public static float MasterVolume { get => F("volMaster", 0.9f); set => SetF("volMaster", Mathf.Clamp01(value)); }
+        /// <summary>Weapons, footsteps, impacts and hit feedback.</summary>
+        public static float EffectsVolume { get => F("volFx", 1f); set => SetF("volFx", Mathf.Clamp01(value)); }
+        /// <summary>Menu sounds and match stings.</summary>
+        public static float InterfaceVolume { get => F("volUi", 0.8f); set => SetF("volUi", Mathf.Clamp01(value)); }
+        /// <summary>Wind, sea and machinery.</summary>
+        public static float AmbienceVolume { get => F("volAmb", 0.8f); set => SetF("volAmb", Mathf.Clamp01(value)); }
 
         public const float DegreesPerCount = 0.044f;
         public const float GamepadDegreesPerSecond = 220f;

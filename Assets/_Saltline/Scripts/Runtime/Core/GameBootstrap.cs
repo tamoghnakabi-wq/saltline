@@ -63,6 +63,7 @@ namespace Saltline.Core
             {
                 Saltline.Settings.VideoSettings.ApplyAll();
                 AudioListener.volume = Saltline.Settings.GameSettings.MasterVolume;
+                Saltline.Audio.GameAudio.Ensure();
             }
             // -maptour renders a map's review viewpoints offline and quits (no menu, no network).
             if (CommandLine.Has("maptour")) { gameObject.AddComponent<MapTour>(); return; }
@@ -109,11 +110,9 @@ namespace Saltline.Core
         {
             if (CommandLine.Has("autotest")) return;
             LocalPlayerController.Attach(p);
-            if (!Application.isBatchMode)
-            {
-                FxManager.Ensure();
-                DebugHud.Attach(p);
-            }
+            // Effects whenever frames are drawn (including -capture runs); the debug overlay only in a window.
+            FxManager.Ensure();
+            if (!Application.isBatchMode) DebugHud.Attach(p);
         }
 
         void OnClientDisconnect(ulong clientId)

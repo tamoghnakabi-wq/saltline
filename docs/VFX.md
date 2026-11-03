@@ -3,6 +3,12 @@
 All effects are cosmetic and run on every client from the replicated shot events (`CombatEvents.Shot`).
 Nothing here affects hit detection, which the host does with its own raycasts and the analytic hitboxes.
 
+Your own shots are drawn at once from a local test against the players as you see them. Other players' shots
+arrive from the host after it resolved them, with a bit per pellet saying whether it hit a player
+(`ShotFx.PelletHits`). That bit decides between a body hit and a wall hit. When this machine draws the victim
+somewhere else, the body hit goes where the ray passes closest to them. When you are the one hit, nothing is drawn
+on your own body.
+
 ## Art
 
 `ArtSource/FX/fx_textures.py` draws every effect texture from seeded noise (seed 20261103), so a rerun gives

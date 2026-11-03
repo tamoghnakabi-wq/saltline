@@ -39,7 +39,7 @@ namespace Saltline.EditorTools
         /// lights, probes, bake settings). The scene and its lightmaps are only rebuilt when this or the
         /// FBX changes, because a bake takes minutes; materials are refreshed on every run.
         /// </summary>
-        const int SceneVersion = 5;
+        const int SceneVersion = 6;
 
         /// <summary>The HDRI's sun (brightest pixel: u, and v from the bottom), measured by sky_remove_sun.py.</summary>
         static readonly Vector2 SkySunUV = new(0.59509f, 0.76587f);
@@ -408,6 +408,7 @@ namespace Saltline.EditorTools
             BuildReflectionProbes(B);
             BuildCameras(B);
             AddCaptureViews(B);
+            BuildAmbience(B);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log($"[SALTLINE] Kappa scene: {colliders} collidable, {clips} clips, {decor} decor, {spawns} spawns, {lights} lamps -> {ScenePath}");
@@ -551,6 +552,26 @@ namespace Saltline.EditorTools
                 Probe("PumpShed_" + s, B(side * 31f, 30.75f, 1.8f), new Vector3(5f, 5.5f, 3.6f), true);
                 Probe("Weighbridge_" + s, B(side * 50f, -19.5f, 1.6f), new Vector3(6f, 5f, 3.2f), true);
             }
+        }
+
+        /// <summary>Looping machinery: the pump house in the middle and the two pump sheds behind the lanes.</summary>
+        static void BuildAmbience(Func<float, float, float, Vector3> B)
+        {
+            var root = new GameObject("Ambience").transform;
+            void Emit(string name, Vector3 at, float volume, float min, float max)
+            {
+                var go = new GameObject("AMB_" + name);
+                go.transform.SetParent(root, false);
+                go.transform.position = at;
+                var e = go.AddComponent<Saltline.Audio.AmbientEmitter>();
+                e.sound = "amb_hum";
+                e.volume = volume;
+                e.minDistance = min;
+                e.maxDistance = max;
+            }
+            Emit("PumpHouse", B(0f, 0f, 1.5f), 1f, 5f, 34f);
+            Emit("PumpShed_W", B(-31f, 30.75f, 1.2f), 0.7f, 3f, 20f);
+            Emit("PumpShed_E", B(31f, 30.75f, 1.2f), 0.7f, 3f, 20f);
         }
 
         static bool Bake()
