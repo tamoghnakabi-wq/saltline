@@ -7,7 +7,8 @@ protocol 3). Nothing here is estimated.
 - Windows.
 - Separate machines.
 - A human playing the map with mouse and keyboard. The new props were reviewed in still captures only.
-- Hit registration on the network after a stall is not fixed: one of three combat runs failed (section 4).
+- Hit registration on the network after a stall is not fixed: one of three combat runs failed (section 4). *Update: reproduced and fixed
+  the same day, see `2026-11-03_M9_StallRecovery.md`.*
 - Frame rate with eight players on Kappa. The render times below are CPU submit times, not frame rates.
 
 ## 1. What was built
@@ -140,6 +141,10 @@ Together with the one-way trip to the host, these can exceed 0.35 s. This is the
 development build's network simulator. Until then, a network stall can leave a client unable to land hits for tens of
 seconds. That is an open defect, not a pass.
 
+*Update, same day: both delays were confirmed as the cause and fixed. The stall was reproduced on demand with
+the network simulator, and after the fix the client hit 28 of 28 shots after a stall. See
+`2026-11-03_M9_StallRecovery.md`.*
+
 ## 5. Problems in the tools
 
 - **One setup run crashed.** Unity's Burst compiler crashed (SIGSEGV in a Burst compiler thread) while setup was
@@ -159,4 +164,4 @@ seconds. That is an open defect, not a pass.
 - **LODs and frame rate.** There are no LODs on the props yet, and no frame-rate measurement with players. Both are
   part of the presets and performance step that comes next.
 - **Hit registration after a network stall.** One of three combat runs failed after a stall (section 4). The cause is
-  not confirmed yet.
+  not confirmed yet. *Fixed since: see `2026-11-03_M9_StallRecovery.md`.*

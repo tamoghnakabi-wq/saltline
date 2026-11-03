@@ -78,6 +78,10 @@ namespace Saltline.Player
         public int ServerInputsProcessed { get; private set; }
         public int ServerInputsSkipped { get; private set; }
         public int ServerInputsDropped { get; private set; }
+        /// <summary>Host: extra inputs simulated to shrink a queue that stayed too deep.</summary>
+        public int ServerInputsCaughtUp { get; private set; }
+        /// <summary>Host: inputs from this player waiting to be simulated.</summary>
+        public int ServerQueueDepth => CountPending();
         public int ServerShotsResolved { get; private set; }
         public int ServerPelletsHit { get; private set; }
         public int QueuedInputs => CountPending();
@@ -105,6 +109,15 @@ namespace Saltline.Player
         const int PendingSize = 64;
         const float MaxBudgetBank = 6f;
         const int MaxQueued = 10;
+        // A queue only needs to cover jitter. Input arrives at one per tick and is used at one per
+        // tick, so a backlog left by a network stall never drains by itself, and every shot in it
+        // waits that much longer before the host rewinds for it. When the queue's lowest depth over
+        // half a second stays above TargetQueue, the host simulates one extra input now and then,
+        // at most CatchUpPerSecond a second: a client sending faster than real time gains at most 10%.
+        const int TargetQueue = 2, QueueWindowTicks = 30;
+        const float CatchUpPerSecond = 6f;
+        int m_QueueWindowMin = int.MaxValue, m_QueueWindowTicks, m_QueueExcess;
+        float m_CatchUpBudget;
         readonly InputCmd[] m_Pending = new InputCmd[PendingSize];
         readonly bool[] m_PendingValid = new bool[PendingSize];
         int m_LastProcessed = int.MinValue;
@@ -505,6 +518,31 @@ namespace Saltline.Player
                     m_PendingValid[Mod(e)] = false;
                     m_LastProcessed = e;
                     ServerInputsDropped++;
+                }
+                queued = CountPending();
+            }
+
+            // Shrink a queue that stays deeper than jitter needs (see TargetQueue).
+            m_CatchUpBudget = Mathf.Min(m_CatchUpBudget + CatchUpPerSecond * Dt, 1f);
+            if (queued < m_QueueWindowMin) m_QueueWindowMin = queued;
+            if (++m_QueueWindowTicks >= QueueWindowTicks)
+            {
+                m_QueueExcess = Mathf.Max(0, m_QueueWindowMin - TargetQueue);
+                m_QueueWindowMin = int.MaxValue;
+                m_QueueWindowTicks = 0;
+            }
+            if (m_QueueExcess > 0 && m_CatchUpBudget >= 1f)
+            {
+                int next = m_LastProcessed + 1;
+                int s = Mod(next);
+                if (m_PendingValid[s] && m_Pending[s].Tick == next)
+                {
+                    m_PendingValid[s] = false;
+                    ServerProcess(m_Pending[s]);
+                    m_LastProcessed = next;
+                    m_CatchUpBudget -= 1f;
+                    m_QueueExcess--;
+                    ServerInputsCaughtUp++;
                 }
             }
         }

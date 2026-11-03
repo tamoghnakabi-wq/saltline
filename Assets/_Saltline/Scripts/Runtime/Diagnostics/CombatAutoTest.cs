@@ -19,7 +19,7 @@ namespace Saltline.Diagnostics
     /// Headless end-to-end combat test over real Unity Relay, with scripted bots:
     ///
     ///   Host:   -autotest combat-host   -codefile f [-lagcomp seconds] [-respawndelay s] [-testout f]
-    ///   Client: -autotest combat-client -codefile f [-expectmiss] [-netsim d,j,l] [-testout f]
+    ///   Client: -autotest combat-client -codefile f [-expectmiss] [-netsim d,j,l] [-netstall s,hold|drop] [-testout f]
     ///
     /// 1. Movement: the client runs a scripted path (sprint, strafe, jump, slide, crouch). Its
     ///    predicted state must match the host's authoritative state (few or no corrections).
@@ -28,6 +28,9 @@ namespace Saltline.Diagnostics
     /// 3. Pistol: same with the semi-automatic sidearm (weapon switch included).
     /// 4. The host's player fires AR bursts at the strafing client.
     /// -expectmiss inverts the sniper check for a control run with lag compensation disabled.
+    /// -netstall stalls the client's network for s seconds halfway through the movement phase (needs
+    /// -netsim), so the shooting phases measure how well hits register after a stall.
+    /// The host notes, per phase, the client's input queue depth and how far back its shots rewound.
     /// </summary>
     public sealed class CombatAutoTest : AutoTestBase
     {
@@ -36,6 +39,11 @@ namespace Saltline.Diagnostics
 
         int m_Phase;
         float m_PhaseStart;
+
+        // host: per-phase network figures for the client
+        long m_QueueSum;
+        int m_QueueSamples, m_QueueMax, m_RewindsAtPhase, m_ClampedAtPhase;
+        double m_AskedAtPhase;
 
         protected override Task<bool> Run() => Role.Contains("host") ? RunHost() : RunClient();
 
@@ -64,6 +72,7 @@ namespace Saltline.Diagnostics
 
             NetDiagnostics.Instance.ClientPhase += (id, phase, value) =>
             {
+                NotePhaseNetwork();
                 m_Phase = phase;
                 m_PhaseStart = Time.time;
                 Note($"host: client {id} entered phase {phase} ({value:F2})");
@@ -104,7 +113,7 @@ namespace Saltline.Diagnostics
             var lc = LagCompensation.Server;
             float hostRate = me.ShotsPredicted > 0 ? me.HitsConfirmed / (float)me.ShotsPredicted : 0f;
             Note($"host: client record K/D/A {cr.Kills}/{cr.Deaths}/{cr.Assists} dmg {cr.DamageDealt}; host K/D {hr.Kills}/{hr.Deaths}");
-            Note($"host: client shots resolved {enemy.ServerShotsResolved}, pellets hit {enemy.ServerPelletsHit}; inputs processed {enemy.ServerInputsProcessed}, skipped {enemy.ServerInputsSkipped}, dropped {enemy.ServerInputsDropped}");
+            Note($"host: client shots resolved {enemy.ServerShotsResolved}, pellets hit {enemy.ServerPelletsHit}; inputs processed {enemy.ServerInputsProcessed}, skipped {enemy.ServerInputsSkipped}, dropped {enemy.ServerInputsDropped}, caught up {enemy.ServerInputsCaughtUp}");
             Note($"host: own shots {me.ShotsPredicted}, confirmed {me.HitsConfirmed} ({hostRate:P0}); rewinds {lc.Rewinds}, clamped {lc.ClampedRewinds}");
             Result["clientKills"] = cr.Kills.ToString();
             Result["clientDamage"] = cr.DamageDealt.ToString();
@@ -116,6 +125,7 @@ namespace Saltline.Diagnostics
             Result["inputsProcessed"] = enemy.ServerInputsProcessed.ToString();
             Result["inputsSkipped"] = enemy.ServerInputsSkipped.ToString();
             Result["inputsDropped"] = enemy.ServerInputsDropped.ToString();
+            Result["inputsCaughtUp"] = enemy.ServerInputsCaughtUp.ToString();
             Result["rewinds"] = lc.Rewinds.ToString();
             Result["clampedRewinds"] = lc.ClampedRewinds.ToString();
             if (CommandLine.Has("capture")) Result["framesCaptured"] = CaptureDirector.Captured.ToString();
@@ -128,8 +138,35 @@ namespace Saltline.Diagnostics
             return true;
         }
 
+        /// <summary>Host: the client's input queue and rewinds during the phase that just ended.</summary>
+        void NotePhaseNetwork()
+        {
+            var lc = LagCompensation.Server;
+            int rewinds = lc.Rewinds - m_RewindsAtPhase;
+            float tickMs = 1000f / NetClock.TickRate;
+            if (m_Phase != 0)
+            {
+                float queueAvg = m_QueueSamples > 0 ? m_QueueSum / (float)m_QueueSamples : 0f;
+                string asked = rewinds > 0
+                    ? $"asked {(lc.AskedTicksTotal - m_AskedAtPhase) / rewinds * tickMs:F0} ms back on average, at most {lc.AskedTicksMax * tickMs:F0} ms"
+                    : "none";
+                Note($"host: phase {m_Phase} network: client input queue avg {queueAvg:F1} max {m_QueueMax} ticks; " +
+                     $"rewinds {rewinds} ({asked}), clamped {lc.ClampedRewinds - m_ClampedAtPhase}");
+            }
+            m_QueueSum = 0; m_QueueSamples = 0; m_QueueMax = 0;
+            m_RewindsAtPhase = lc.Rewinds;
+            m_ClampedAtPhase = lc.ClampedRewinds;
+            m_AskedAtPhase = lc.AskedTicksTotal;
+            lc.ResetAskedMax();
+        }
+
         PlayerIntent HostBrain(NetPlayer p, PlayerIntent i, NetPlayer enemy)
         {
+            int depth = enemy.ServerQueueDepth;
+            m_QueueSum += depth;
+            m_QueueSamples++;
+            if (depth > m_QueueMax) m_QueueMax = depth;
+
             var o = new PlayerIntent { AimYaw = i.AimYaw, AimPitch = 0f };
             if (!p.AliveState.Value) return o;
             bool sees = BotInputProvider.TargetChest(p, enemy, out var chest);
@@ -184,7 +221,19 @@ namespace Saltline.Diagnostics
             int reconBefore = me.Reconciliations, tickBefore = me.LocalTick;
             Vector3 start = me.SimMotor.Position;
             bot.Brain = (p, i) => MovementBrain(p, i);
-            await WaitSeconds(8f);
+            string stall = CommandLine.Get("netstall", "");
+            if (stall.Length > 0)
+            {
+                var sp = stall.Split(',');
+                float secs = float.TryParse(sp[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0f;
+                bool hold = sp.Length < 2 || sp[1] != "drop";
+                await WaitSeconds(3f);
+                if (!NetSimBridge.Stall(secs, hold)) return Fail("-netstall needs -netsim and a development build");
+                Note($"client: network stall, {(hold ? "holding" : "dropping")} packets for {secs:F1} s");
+                Result["netstall"] = stall;
+                await WaitSeconds(5f);
+            }
+            else await WaitSeconds(8f);
             bot.Brain = (p, i) => new PlayerIntent { AimYaw = i.AimYaw };
             await WaitSeconds(0.8f);
             int moveTicks = me.LocalTick - tickBefore;
@@ -242,7 +291,8 @@ namespace Saltline.Diagnostics
 
             bool expectMiss = CommandLine.Has("expectmiss");
             bool ok = true;
-            if (moveRecon > Mathf.Max(3, moveTicks / 20)) ok = Fail($"too many movement corrections ({moveRecon} in {moveTicks} ticks)");
+            // A stall in the movement phase forces corrections; the shooting phases are what that run measures.
+            if (stall.Length == 0 && moveRecon > Mathf.Max(3, moveTicks / 20)) ok = Fail($"too many movement corrections ({moveRecon} in {moveTicks} ticks)");
             if (sShots < 8) ok = Fail($"too few sniper shots fired ({sShots})");
             if (expectMiss)
             {
@@ -262,7 +312,7 @@ namespace Saltline.Diagnostics
             m_Phase = phase;
             m_PhaseStart = Time.time;
             NetDiagnostics.Instance.ClientPhaseRpc(phase, value);
-            Note($"client: phase {phase}");
+            Note($"client: phase {phase} (interpolation delay {NetClock.InterpolationTicks:F1} ticks, extrapolated frames so far {NetClock.ExtrapolatedFrames})");
             await WaitSeconds(0.3f);
         }
 

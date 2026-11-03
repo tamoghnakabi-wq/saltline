@@ -10,7 +10,9 @@ No assets were taken from commercial games.
 - **Kappa props:** containers, trucks, the salt harvester, bulk bags, pallets, IBC tanks, drums, lamps, windows,
   doors, shutters and the other set dressing, modelled from `ArtSource/Blender/kappa_props.py`.
 - **Generated textures:** sacks, woven bulk bags, hazard stripes, paint, water and the Arena textures, made from seeded noise by `ArtSource/Textures/gen_kappa_textures.py`.
-- **Sound effects:** synthesised by `ArtSource/Audio/gen_sfx.py`.
+- **Sound effects and ambience:** every sound (gunshots, weapon handling, footsteps, impacts, player sounds, hit
+  feedback, interface sounds, match stings, the coastal bed and the machinery hum) is synthesised from seeded noise,
+  oscillators and filters by `ArtSource/Audio/gen_sfx.py`. No recordings, samples or sound libraries were used.
 - **Weapons:** original designs, modelled in Blender from `ArtSource/Blender/weapons_build.py` (none copies a real firearm). Their textures are baked by `ArtSource/Blender/weapons_lib.py`.
 - **Operator character:** original design (no real unit, insignia or commercial character), modelled, rigged, skinned and baked in Blender from `ArtSource/Blender/operator_build.py`. Its rig uses Mixamo-compatible bone names so it can be set up as a Unity Humanoid.
 - **Weapon handling:** the third-person weapon hold, hand placement and reload hand motion are procedural (`OperatorRig.cs`), not Mixamo clips.

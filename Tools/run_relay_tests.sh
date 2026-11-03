@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real Unity Relay multiplayer tests using headless player builds (no editor).
 #
-#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combataudio|combatlag|combatnolag|match|kappamatch|matchdraw|ui|net|gameplay|all] [binary]
+#   Tools/run_relay_tests.sh [pair|capacity|hostloss|hostquit|latency|combat|combataudio|combatlag|combatnolag|combatstall|match|kappamatch|matchdraw|ui|net|gameplay|all] [binary]
 #
 # Each test starts separate game processes, each signed in as its own anonymous Unity
 # player (-profile), and communicating only through Unity Relay. Results land in
@@ -133,6 +133,13 @@ test_combatlag() { local SAVED="$APP"; needdev combatlag || return; run_combat c
 # which shows the lag-compensated runs are not passing by accident.
 test_combatnolag() { local SAVED="$APP"; needdev combatnolag || return; run_combat combatnolag "-lagcomp 0" "-netsim $LAGSIM -expectmiss"; APP="$SAVED"; }
 
+# Network stall: the client's link holds every packet for STALL seconds halfway through the
+# movement phase, then delivers them together (as a congested link or a VPN that briefly loses its
+# route would), on top of a normal 30 ms each way. The shooting phases that follow must register
+# hits as well as without a stall. STALLMODE=drop loses the packets instead.
+STALL="${STALL:-2}"; STALLMODE="${STALLMODE:-hold}"
+test_combatstall() { local SAVED="$APP"; needdev combatstall || return; run_combat "combatstall_${STALLMODE}" "" "-netsim 30,5,0 -netstall $STALL,$STALLMODE"; APP="$SAVED"; }
+
 # Team Deathmatch flow: lobby rules, warmup, live, score limit, results, back to the lobby.
 # Short custom rules so a full match fits in about a minute. Kills are applied on the host via
 # the normal damage path (aim and hit registration are what the combat tests cover).
@@ -179,6 +186,7 @@ case "$WHICH" in
   combataudio) test_combataudio ;;
   combatlag) test_combatlag ;;
   combatnolag) test_combatnolag ;;
+  combatstall) test_combatstall ;;
   match) test_match ;;
   kappamatch) test_match kappa kappamatch ;;
   matchdraw) test_matchdraw ;;

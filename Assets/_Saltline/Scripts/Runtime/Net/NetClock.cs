@@ -29,6 +29,10 @@ namespace Saltline.Net
             var nm = NetworkManager.Singleton;
             if (nm == null || nm.IsServer) return;
             float late = (float)(nm.ServerTime.TickWithPartial - serverTick);
+            // A network stall makes snapshots seconds late. No delay can cover that, so remember at most
+            // what the delay can be; otherwise the slow forgetting below would hold the delay at its
+            // maximum for a minute after a two-second stall, and every shot would need a deeper rewind.
+            if (late > MaxTicks) late = MaxTicks;
             if (late > s_MaxLateness) s_MaxLateness = late;
         }
 
@@ -39,7 +43,7 @@ namespace Saltline.Net
             float dt = Time.unscaledDeltaTime;
             s_MaxLateness = Mathf.Max(-2f, s_MaxLateness - 1.5f * dt); // forget old spikes slowly
             float target = Mathf.Clamp(s_MaxLateness + SnapshotEveryTicks + 1.5f, MinTicks, MaxTicks);
-            float rate = target > InterpolationTicks ? 30f : 1.5f; // grow fast, shrink slowly
+            float rate = target > InterpolationTicks ? 30f : 3f; // grow fast, shrink slowly (others play 5% fast meanwhile)
             InterpolationTicks = Mathf.MoveTowards(InterpolationTicks, target, rate * dt);
         }
 

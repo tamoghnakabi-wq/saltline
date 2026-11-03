@@ -29,8 +29,12 @@ namespace Saltline.Combat
 
         public int Rewinds { get; private set; }
         public int ClampedRewinds { get; private set; }
+        /// <summary>How far back shots asked to look, in ticks, before clamping (diagnostics).</summary>
+        public double AskedTicksTotal { get; private set; }
+        public double AskedTicksMax { get; private set; }
 
         public void Clear() => m_History.Clear();
+        public void ResetAskedMax() => AskedTicksMax = 0;
         public void Remove(ulong clientId) => m_History.Remove(clientId);
 
         public void Record(ulong clientId, int tick, in HitboxPose pose, bool alive)
@@ -55,6 +59,12 @@ namespace Saltline.Combat
             if (!m_History.TryGetValue(clientId, out var ring)) return false;
 
             double minTick = currentTick - MaxRewindSeconds * tickRate;
+            if (countStats)
+            {
+                double asked = currentTick - viewTick;
+                AskedTicksTotal += asked;
+                if (asked > AskedTicksMax) AskedTicksMax = asked;
+            }
             if (viewTick < minTick) { viewTick = minTick; if (countStats) ClampedRewinds++; }
             if (viewTick > currentTick) viewTick = currentTick;
             if (countStats) Rewinds++;
