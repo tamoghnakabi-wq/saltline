@@ -1,0 +1,2 @@
+run,preset,variant,width,height,frames,seconds,avg_fps,median_ms,p95_ms,p99_ms,low1_fps,max_ms,cpu_ms,cpu_main_ms,cpu_render_ms,gpu_ms,gpu_p95_ms,batches,setpass,tris_k,shadow_casters,render_scale
+0,Laptop,,1920,1080,13882,43.74,317.38,3.12,3.75,4.15,186.23,82.42,3.16,1.81,1.08,5.59,7.07,475.92,113.58,792.75,435.94,0.80

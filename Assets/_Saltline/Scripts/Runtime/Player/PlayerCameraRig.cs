@@ -63,7 +63,7 @@ namespace Saltline.Player
             go.AddComponent<AudioListener>();
             go.AddComponent<Saltline.FX.ExposureAdaptation>();
             var data = cam.GetUniversalAdditionalCameraData();
-            data.renderPostProcessing = Saltline.Settings.VideoSettings.PostProcessing;
+            Saltline.Settings.VideoSettings.ConfigureCamera(data);
             rig.MainCamera = cam;
 
             var vmGo = new GameObject("ViewmodelCamera");

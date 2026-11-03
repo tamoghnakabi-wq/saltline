@@ -117,12 +117,13 @@ namespace Saltline.UI
 
         static void Section(VisualElement parent, string text) => parent.Add(Ui.Text(text, "set-section"));
 
-        static void SliderRow(VisualElement parent, string label, float min, float max, float value, Func<float, string> format, Action<float> set, string hint = null)
+        static (Slider slider, Label value) SliderRow(VisualElement parent, string label, float min, float max, float value, Func<float, string> format, Action<float> set, string hint = null)
         {
             var ctl = Row(parent, label, hint);
             var s = ctl.Put(new Slider(min, max) { value = value }.Classes("grow"));
             var v = ctl.Put(Ui.Text(format(value), "set-value"));
             s.RegisterValueChangedCallback(e => { set(e.newValue); v.text = format(e.newValue); });
+            return (s, v);
         }
 
         static void ToggleRow(VisualElement parent, string label, bool value, Action<bool> set, string hint = null)
@@ -184,13 +185,26 @@ namespace Saltline.UI
             ChoiceRow(c, "Frame rate limit", caps, Mathf.Max(0, Array.IndexOf(VideoSettings.FrameCaps, VideoSettings.FrameCap)), i => VideoSettings.FrameCap = VideoSettings.FrameCaps[i]);
 
             Section(c, "QUALITY");
-            ChoiceRow(c, "Graphics preset", VideoSettings.PresetNames.ToList(), (int)VideoSettings.Preset, i => VideoSettings.Preset = (QualityPreset)i,
-                "Laptop lowers render scale and shadow range for thin-and-light machines");
-            SliderRow(c, "Render scale", 0.5f, 1f, VideoSettings.EffectiveRenderScale, v => $"{Mathf.RoundToInt(v * 100)}%", v => VideoSettings.RenderScaleOverride = v,
+            Slider scale = null;
+            Label scaleValue = null, detail = null;
+            static string Percent(float v) => $"{Mathf.RoundToInt(v * 100)}%";
+            ChoiceRow(c, "Graphics preset", VideoSettings.PresetNames.ToList(), (int)VideoSettings.Preset, i =>
+            {
+                VideoSettings.Preset = (QualityPreset)i;
+                // Follow the new preset without saving its scale as the player's own choice.
+                scale.SetValueWithoutNotify(VideoSettings.EffectiveRenderScale);
+                scaleValue.text = Percent(VideoSettings.EffectiveRenderScale);
+                detail.text = PresetDetail(VideoSettings.Values((QualityPreset)i));
+            }, "Laptop lowers render scale and shadow range for thin-and-light machines");
+            (scale, scaleValue) = SliderRow(c, "Render scale", 0.5f, 1f, VideoSettings.EffectiveRenderScale, Percent, v => VideoSettings.RenderScaleOverride = v,
                 "Below 100% renders fewer pixels and upscales (FSR)");
-            var pv = VideoSettings.Values(VideoSettings.Preset);
-            c.Add(Ui.Text($"Preset detail: MSAA {(pv.Msaa > 1 ? pv.Msaa + "x" : "off")} · shadows {pv.ShadowDistance:0} m, {pv.Cascades} cascade{(pv.Cascades > 1 ? "s" : "")} · HDR {(pv.Hdr ? "on" : "off")} · post-processing {(pv.PostFx ? "on" : "off")}", "set-hint", "mt-16"));
+            detail = c.Put(Ui.Text(PresetDetail(VideoSettings.Values(VideoSettings.Preset)), "set-hint", "mt-16"));
         }
+
+        static string PresetDetail(VideoSettings.PresetValues pv) =>
+            $"Preset detail: MSAA {(pv.Msaa > 1 ? pv.Msaa + "x" : "off")} · shadows {pv.ShadowDistance:0} m, {pv.Cascades} cascade{(pv.Cascades > 1 ? "s" : "")}, " +
+            $"soft {pv.SoftShadows.ToString().ToLowerInvariant()} · ambient occlusion {pv.Ao.ToString().ToLowerInvariant()} · HDR {(pv.Hdr ? "on" : "off")} · " +
+            $"post-processing {(pv.PostFx ? "on" : "off")}";
 
         static void BuildAudio(VisualElement c)
         {

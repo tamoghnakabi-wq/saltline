@@ -129,10 +129,80 @@ namespace Saltline.EditorTools
             if (!force && File.Exists(ScenePath) && File.Exists(HashPath) && File.ReadAllText(HashPath).Trim() == hash && HasBake())
             {
                 Debug.Log("[SALTLINE] Kappa scene and bake are up to date (FBX and scene version unchanged); materials refreshed. Pass -rebuildkappa to force.");
+                EnsureOcclusion(hash, false);
                 return;
             }
             ConfigureModel(materials);
-            if (BuildScene()) File.WriteAllText(HashPath, hash + "\n");
+            if (BuildScene())
+            {
+                File.WriteAllText(HashPath, hash + "\n");
+                EnsureOcclusion(hash, true);
+            }
+        }
+
+        // ------------------------------------------------------------------ occlusion culling
+
+        /// <summary>Bump when the occluder rules or bake settings change.</summary>
+        const int OcclusionVersion = 1;
+        const string OcclusionStampPath = MapDir + "/Kappa.occlusionstamp";
+
+        [MenuItem("Saltline/Build/Kappa Occlusion Culling")]
+        static void BakeOcclusionMenu() => EnsureOcclusion(InputHash(), true);
+
+        /// <summary>
+        /// Bakes occlusion culling for the scene, separately from the lighting (it does not touch the
+        /// lightmaps). Big solid pieces occlude; thin and see-through details (anything without a collider,
+        /// rails, pipes, wheels and the like) only get culled, so nothing is hidden behind a gap.
+        /// </summary>
+        static void EnsureOcclusion(string sceneHash, bool force)
+        {
+            string stamp = $"{sceneHash} v{OcclusionVersion}";
+            // StaticOcclusionCulling.umbraDataSize reads 0 in batch mode, so the data file is what counts.
+            string data = Path.Combine(Path.GetDirectoryName(ScenePath), Path.GetFileNameWithoutExtension(ScenePath), "OcclusionCullingData.asset");
+            if (!force && File.Exists(OcclusionStampPath) && File.ReadAllText(OcclusionStampPath).Trim() == stamp && File.Exists(data) && File.ReadAllText(ScenePath).Contains(AssetDatabase.AssetPathToGUID(data)))
+            {
+                Debug.Log($"[SALTLINE] Kappa occlusion culling is up to date ({new FileInfo(data).Length / 1024} KB).");
+                return;
+            }
+            var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            int occluders = 0, occludees = 0;
+            foreach (var mr in Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+            {
+                var go = mr.gameObject;
+                if (go.layer != Layers.Environment) continue;
+                var flags = GameObjectUtility.GetStaticEditorFlags(go) | StaticEditorFlags.OccludeeStatic;
+                bool occluder = !IsThinDetail(go);
+                flags = occluder ? flags | StaticEditorFlags.OccluderStatic : flags & ~StaticEditorFlags.OccluderStatic;
+                GameObjectUtility.SetStaticEditorFlags(go, flags);
+                if (occluder) occluders++;
+                occludees++;
+            }
+            // Smallest occluder about a crate; holes from a quarter metre (doorways, windows, gaps under shutters) stay open.
+            StaticOcclusionCulling.smallestOccluder = 2f;
+            StaticOcclusionCulling.smallestHole = 0.25f;
+            StaticOcclusionCulling.backfaceThreshold = 100f;
+            var sw = Stopwatch.StartNew();
+            bool ok = StaticOcclusionCulling.Compute();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+            // Compute() can report false in batch mode although it wrote the data, so the data decides.
+            int size = StaticOcclusionCulling.umbraDataSize;
+            AssetDatabase.Refresh();
+            long fileSize = File.Exists(data) ? new FileInfo(data).Length : 0;
+            if (size > 0 || fileSize > 0)
+            {
+                File.WriteAllText(OcclusionStampPath, stamp + "\n");
+                Debug.Log($"[SALTLINE] Kappa occlusion culling baked in {sw.Elapsed.TotalSeconds:F0} s: {occluders} occluders, {occludees} occludees; " +
+                          $"Compute() {ok}, Umbra data {size / 1024} KB, file {fileSize / 1024} KB");
+            }
+            else Debug.LogError($"[SALTLINE] Kappa occlusion culling bake FAILED after {sw.Elapsed.TotalSeconds:F0} s (Compute() {ok}, no data)");
+        }
+
+        /// <summary>Details that should not hide what is behind them: no collider, or thin probe-lit parts.</summary>
+        static bool IsThinDetail(GameObject go)
+        {
+            string n = go.name;
+            return n.EndsWith("__NC") || n.EndsWith("__PC") || ProbeLitParts.Any(n.Contains);
         }
 
         static string InputHash()
@@ -430,6 +500,16 @@ namespace Saltline.EditorTools
         /// (rails, pipes, wheels, posts) are lit from light probes instead: lightmaps on them would cost
         /// space and show seams. The sea takes no part in the bake.
         /// </summary>
+        /// <summary>Thin or rounded parts lit from light probes rather than lightmaps (see ConfigureGI).</summary>
+        static readonly string[] ProbeLitParts =
+        {
+            "Rail", "Pipe", "Bands", "Beams", "Rollers", "_AC_", "Flywheel", "Scoop", "Trim", "Door", "Lamps",
+            "Wheels", "LampPosts", "Bollards", "Barrels", "Tracks", "Legs", "Cols", "Columns", "Pillars", "Saddles", "Crane_Boom",
+            // detail pass: vehicle parts, small props, pallets, thin trims
+            "Tyres", "Chassis", "Bumper", "Truck_Tank", "Harvester_Glass", "Manway", "IBC", "CableDrum", "Pallet",
+            "Guides", "Coil", "ShutterPosts", "Coping",
+        };
+
         static void ConfigureGI(GameObject go, MeshRenderer mr)
         {
             string n = go.name;
@@ -440,12 +520,7 @@ namespace Saltline.EditorTools
                 mr.receiveGI = ReceiveGI.LightProbes;
                 return;
             }
-            string[] probeLit = { "Rail", "Pipe", "Bands", "Beams", "Rollers", "_AC_", "Flywheel", "Scoop", "Trim", "Door", "Lamps",
-                                  "Wheels", "LampPosts", "Bollards", "Barrels", "Tracks", "Legs", "Cols", "Columns", "Pillars", "Saddles", "Crane_Boom",
-                                  // detail pass: vehicle parts, small props, pallets, thin trims
-                                  "Tyres", "Chassis", "Bumper", "Truck_Tank", "Harvester_Glass", "Manway", "IBC", "CableDrum", "Pallet",
-                                  "Guides", "Coil", "ShutterPosts", "Coping" };
-            bool probes = probeLit.Any(n.Contains);
+            bool probes = ProbeLitParts.Any(n.Contains);
             // Decals lying on lightmapped surfaces keep lightmaps so they match what is under them.
             string[] lightmappedDecals = { "Brine", "Yard_Paint", "RoadMarks", "Dock_Edge", "Puddles", "Weighbridge_Plate_", "ParkingLines", "Hatch" };
             if (n.EndsWith("__NC") && !lightmappedDecals.Any(n.Contains)) probes = true;

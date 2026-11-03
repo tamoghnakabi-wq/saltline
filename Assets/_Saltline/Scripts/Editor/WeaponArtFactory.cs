@@ -217,6 +217,10 @@ namespace Saltline.EditorTools
             mi.importTangents = ModelImporterTangents.CalculateMikk; // matches the Blender bake's tangent space
             mi.generateSecondaryUV = false;
             mi.addCollider = false;
+            // Automatic Mesh LOD: other players' guns drop to simpler meshes with distance (the preset's
+            // mesh LOD threshold). The first-person gun fills the screen, so it always draws the full mesh.
+            mi.generateMeshLods = true;
+            mi.maximumMeshLod = 4;
             mi.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
             mi.materialLocation = ModelImporterMaterialLocation.InPrefab;
             foreach (var (name, mat) in materials)

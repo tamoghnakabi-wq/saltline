@@ -167,12 +167,31 @@ namespace Saltline.UI
             if (t == Tab.Browse) Refresh();
         }
 
+        void UpdateFooter()
+        {
+            string text = $"v{BuildInfo.Version}  ·  protocol {BuildInfo.NetProtocol}  ·  {Ui.PlatformTag(PlayerRecord.LocalPlatform())}";
+            if (Saltline.Settings.ShaderWarmup.Slow)
+                text += $"  ·  preparing shaders for this machine {Mathf.RoundToInt(Saltline.Settings.ShaderWarmup.Progress * 100f)}%";
+            m_Footer.text = text;
+        }
+
         protected override void OnShow()
         {
             m_Name.SetValueWithoutNotify(Callsign);
             m_HostError.text = "";
             m_JoinError.text = "";
-            m_Footer.text = $"v{BuildInfo.Version}  ·  protocol {BuildInfo.NetProtocol}  ·  {Ui.PlatformTag(PlayerRecord.LocalPlatform())}";
+            UpdateFooter();
+            // On the first launch on a machine the shaders are compiled while the menu is up, which
+            // makes it stutter for a few seconds: say so until it is done.
+            if (!Saltline.Settings.ShaderWarmup.Done)
+            {
+                IVisualElementScheduledItem poll = null;
+                poll = m_Footer.schedule.Execute(() =>
+                {
+                    UpdateFooter();   // runs once more after the warm-up ends, to clear the note
+                    if (Saltline.Settings.ShaderWarmup.Done) poll.Pause();
+                }).Every(200);
+            }
             if (!string.IsNullOrEmpty(GameBootstrap.PendingNotice))
             {
                 Host.Alert("MATCH ENDED", GameBootstrap.PendingNotice);

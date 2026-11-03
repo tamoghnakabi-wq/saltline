@@ -65,8 +65,12 @@ namespace Saltline.Core
                 AudioListener.volume = Saltline.Settings.GameSettings.MasterVolume;
                 Saltline.Audio.GameAudio.Ensure();
             }
+            // Compile shader pipeline states while the menu is up (or record them with -tracegraphicsstates).
+            Saltline.Settings.ShaderWarmup.Begin(gameObject);
             // -maptour renders a map's review viewpoints offline and quits (no menu, no network).
             if (CommandLine.Has("maptour")) { gameObject.AddComponent<MapTour>(); return; }
+            // -benchmark measures frame times on a map in a window, per quality preset, and quits.
+            if (CommandLine.Has("benchmark")) { gameObject.AddComponent<Benchmark>(); return; }
             // The menu UI exists whenever something is rendered (and not under a headless test).
             if (RunMode.Presentation && !CommandLine.Has("autotest")) UiRoot.Ensure();
 

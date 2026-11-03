@@ -48,6 +48,8 @@ namespace Saltline.EditorTools
             PlayerSettings.SetGraphicsAPIs(BuildTarget.StandaloneOSX, new[] { UnityEngine.Rendering.GraphicsDeviceType.Metal });
 
             PlayerSettings.gcIncremental = true;
+            // CPU and GPU frame times for the benchmark and the debug overlay (FrameTimingManager).
+            PlayerSettings.enableFrameTimingStats = true;
             PlayerSettings.stripEngineCode = false;
 
             AssetDatabase.SaveAssets();

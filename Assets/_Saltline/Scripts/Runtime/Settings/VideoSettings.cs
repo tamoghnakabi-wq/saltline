@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -29,37 +30,81 @@ namespace Saltline.Settings
         public static readonly string[] PresetNames = { "Low", "Medium", "High", "Ultra", "Laptop (MacBook Air class)" };
         public static readonly int[] FrameCaps = { 0, 30, 60, 90, 120, 144, 165, 240 };
 
-        public readonly struct PresetValues
-        {
-            public readonly float RenderScale;
-            public readonly int Msaa;
-            public readonly float ShadowDistance;
-            public readonly int Cascades;
-            public readonly bool Hdr;
-            public readonly bool PostFx;
-            public readonly AnisotropicFiltering Aniso;
-            public readonly int TextureMipLimit;
-            public readonly int ShadowResolution;
+        /// <summary>
+        /// Screen-space ambient occlusion. Low: half resolution, 8 samples, gaussian blur. Medium: half
+        /// resolution, 12 samples, bilateral blur. High: full resolution, 12 samples, bilateral blur, which
+        /// costs about five times as much as half resolution and looks only slightly crisper.
+        /// </summary>
+        public enum AoQuality { Off = 0, Low = 1, Medium = 2, High = 3 }
 
-            public PresetValues(float scale, int msaa, float shadow, int cascades, bool hdr, bool post, AnisotropicFiltering aniso, int mip, int shadowRes)
-            {
-                RenderScale = scale; Msaa = msaa; ShadowDistance = shadow; Cascades = cascades; Hdr = hdr; PostFx = post; Aniso = aniso; TextureMipLimit = mip; ShadowResolution = shadowRes;
-            }
+        /// <summary>What a preset sets. Values are applied to the active URP asset, the sun and QualitySettings.</summary>
+        public struct PresetValues
+        {
+            public float RenderScale;
+            public int Msaa;
+            /// <summary>Post-process anti-aliasing on the camera (needs post-processing), for presets without MSAA.</summary>
+            public AntialiasingMode PostAa;
+            public float ShadowDistance;
+            public int Cascades;
+            public int ShadowResolution;
+            public SoftShadowQuality SoftShadows;
+            public bool Hdr;
+            public bool PostFx;
+            public AoQuality Ao;
+            public AnisotropicFiltering Aniso;
+            public int TextureMipLimit;
+            /// <summary>LOD Group distance scale (operators): higher keeps detailed models further away.</summary>
+            public float LodBias;
+            /// <summary>Mesh LOD error threshold (other players' weapons): higher switches to simpler meshes sooner.</summary>
+            public float MeshLodThreshold;
         }
 
         public static PresetValues Values(QualityPreset p) => p switch
         {
-            QualityPreset.Low => new PresetValues(0.75f, 1, 35f, 1, false, false, AnisotropicFiltering.Disable, 1, 1024),
-            QualityPreset.Medium => new PresetValues(0.9f, 2, 60f, 2, true, true, AnisotropicFiltering.Enable, 0, 2048),
-            QualityPreset.High => new PresetValues(1f, 4, 90f, 4, true, true, AnisotropicFiltering.ForceEnable, 0, 4096),
-            QualityPreset.Ultra => new PresetValues(1f, 4, 130f, 4, true, true, AnisotropicFiltering.ForceEnable, 0, 4096),
-            _ => new PresetValues(0.8f, 1, 55f, 2, true, true, AnisotropicFiltering.Enable, 0, 2048),
+            QualityPreset.Low => new PresetValues
+            {
+                RenderScale = 0.75f, Msaa = 1, PostAa = AntialiasingMode.FastApproximateAntialiasing,
+                ShadowDistance = 35f, Cascades = 1, ShadowResolution = 1024, SoftShadows = SoftShadowQuality.Low,
+                Hdr = true, PostFx = true, Ao = AoQuality.Off, Aniso = AnisotropicFiltering.Disable, TextureMipLimit = 1, LodBias = 0.6f, MeshLodThreshold = 2f,
+            },
+            QualityPreset.Medium => new PresetValues
+            {
+                RenderScale = 0.9f, Msaa = 2, ShadowDistance = 60f, Cascades = 2, ShadowResolution = 2048, SoftShadows = SoftShadowQuality.Medium,
+                Hdr = true, PostFx = true, Ao = AoQuality.Low, Aniso = AnisotropicFiltering.Enable, TextureMipLimit = 0, LodBias = 1f, MeshLodThreshold = 1f,
+            },
+            QualityPreset.High => new PresetValues
+            {
+                RenderScale = 1f, Msaa = 4, ShadowDistance = 90f, Cascades = 4, ShadowResolution = 4096, SoftShadows = SoftShadowQuality.High,
+                Hdr = true, PostFx = true, Ao = AoQuality.Medium, Aniso = AnisotropicFiltering.ForceEnable, TextureMipLimit = 0, LodBias = 1.5f, MeshLodThreshold = 0.7f,
+            },
+            QualityPreset.Ultra => new PresetValues
+            {
+                RenderScale = 1f, Msaa = 4, ShadowDistance = 130f, Cascades = 4, ShadowResolution = 4096, SoftShadows = SoftShadowQuality.High,
+                Hdr = true, PostFx = true, Ao = AoQuality.High, Aniso = AnisotropicFiltering.ForceEnable, TextureMipLimit = 0, LodBias = 2f, MeshLodThreshold = 0.5f,
+            },
+            _ => new PresetValues
+            {
+                RenderScale = 0.8f, Msaa = 2, ShadowDistance = 55f, Cascades = 2, ShadowResolution = 2048, SoftShadows = SoftShadowQuality.Medium,
+                Hdr = true, PostFx = true, Ao = AoQuality.Low, Aniso = AnisotropicFiltering.Enable, TextureMipLimit = 0, LodBias = 1f, MeshLodThreshold = 1f,
+            },
         };
 
         public static QualityPreset Preset
         {
-            get => (QualityPreset)PlayerPrefs.GetInt(P + "preset", (int)DetectDefault());
+            get => s_Preview ?? (QualityPreset)PlayerPrefs.GetInt(P + "preset", (int)DetectDefault());
             set { PlayerPrefs.SetInt(P + "preset", (int)value); ApplyQuality(); }
+        }
+
+        static QualityPreset? s_Preview;
+
+        /// <summary>
+        /// Apply a preset with its own render scale without saving anything (the benchmark uses this).
+        /// null goes back to the saved settings.
+        /// </summary>
+        public static void PreviewPreset(QualityPreset? preset)
+        {
+            s_Preview = preset;
+            ApplyQuality();
         }
 
         /// <summary>0 = use the preset's render scale.</summary>
@@ -97,7 +142,7 @@ namespace Saltline.Settings
 
         public static Vector2Int SavedResolution => new(PlayerPrefs.GetInt(P + "w", 0), PlayerPrefs.GetInt(P + "h", 0));
 
-        public static bool PostProcessing => Values(Preset).PostFx;
+        public static bool PostProcessing => Applied.PostFx;
 
         /// <summary>Particle budget for weapon and impact effects (1 = full).</summary>
         public static float EffectsDetail => Preset switch
@@ -107,7 +152,7 @@ namespace Saltline.Settings
             QualityPreset.Laptop => 0.7f,
             _ => 1f,
         };
-        public static float EffectiveRenderScale => RenderScaleOverride > 0f ? RenderScaleOverride : Values(Preset).RenderScale;
+        public static float EffectiveRenderScale => RenderScaleOverride > 0f && s_Preview == null ? RenderScaleOverride : Values(Preset).RenderScale;
 
         /// <summary>First launch: Apple-silicon laptops start on the laptop preset, everything else on High.</summary>
         public static QualityPreset DetectDefault()
@@ -154,31 +199,96 @@ namespace Saltline.Settings
 
         public static void ApplyQuality()
         {
-            var v = Values(Preset);
+            Apply(Values(Preset), EffectiveRenderScale);
+        }
+
+        /// <summary>Apply a set of values directly (the benchmark uses this to test single changes).</summary>
+        public static void Apply(PresetValues v, float renderScale)
+        {
+            s_Applied = v;
+            s_HasApplied = true;
             if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset urp)
             {
-                urp.renderScale = EffectiveRenderScale;
+                urp.renderScale = renderScale;
                 urp.upscalingFilter = UpscalingFilterSelection.FSR;
                 urp.msaaSampleCount = v.Msaa;
                 urp.shadowDistance = v.ShadowDistance;
                 urp.shadowCascadeCount = v.Cascades;
                 urp.mainLightShadowmapResolution = v.ShadowResolution;
                 urp.supportsHDR = v.Hdr;
+                ApplyAmbientOcclusion(urp, v.Ao);
             }
             QualitySettings.anisotropicFiltering = v.Aniso;
             QualitySettings.globalTextureMipmapLimit = v.TextureMipLimit;
+            QualitySettings.lodBias = v.LodBias;
+            QualitySettings.meshLodThreshold = v.MeshLodThreshold;
             ApplyCameras();
             Changed?.Invoke();
         }
 
+        /// <summary>The values last applied (the preset's, or the benchmark's test values).</summary>
+        public static PresetValues Applied => s_HasApplied ? s_Applied : Values(Preset);
+        static PresetValues s_Applied;
+        static bool s_HasApplied;
+
+        // The SSAO feature's settings are internal to URP; they are set through reflection (Mono builds).
+        static FieldInfo s_AoSettings, s_AoDownsample, s_AoSamples, s_AoBlur;
+        static bool s_AoWarned;
+
+        static void ApplyAmbientOcclusion(UniversalRenderPipelineAsset urp, AoQuality q)
+        {
+            // In the editor these changes would be saved into the renderer asset, and so into later builds.
+            if (Application.isEditor) return;
+            foreach (var data in urp.rendererDataList)
+            {
+                if (data == null) continue;
+                foreach (var feature in data.rendererFeatures)
+                {
+                    if (feature is not ScreenSpaceAmbientOcclusion ao) continue;
+                    ao.SetActive(q != AoQuality.Off);
+                    if (q == AoQuality.Off) continue;
+                    s_AoSettings ??= typeof(ScreenSpaceAmbientOcclusion).GetField("m_Settings", BindingFlags.NonPublic | BindingFlags.Instance);
+                    var settings = s_AoSettings?.GetValue(ao);
+                    if (settings == null) { WarnAo(); continue; }
+                    var st = settings.GetType();
+                    s_AoDownsample ??= st.GetField("Downsample", BindingFlags.NonPublic | BindingFlags.Instance);
+                    s_AoSamples ??= st.GetField("Samples", BindingFlags.NonPublic | BindingFlags.Instance);
+                    s_AoBlur ??= st.GetField("BlurQuality", BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (s_AoDownsample == null || s_AoSamples == null || s_AoBlur == null) { WarnAo(); continue; }
+                    // URP's enums: samples High 12, Medium 8, Low 4 (0, 1, 2); blur High bilateral, Medium gaussian, Low kawase.
+                    s_AoDownsample.SetValue(settings, q != AoQuality.High);
+                    s_AoSamples.SetValue(settings, Enum.ToObject(s_AoSamples.FieldType, q == AoQuality.Low ? 1 : 0));
+                    s_AoBlur.SetValue(settings, Enum.ToObject(s_AoBlur.FieldType, q == AoQuality.Low ? 1 : 0));
+                }
+            }
+        }
+
+        static void WarnAo()
+        {
+            if (s_AoWarned) return;
+            s_AoWarned = true;
+            Debug.LogWarning("[SALTLINE] SSAO quality could not be set: URP's SSAO settings layout changed. SSAO stays at its asset settings.");
+        }
+
         static void ApplyCameras()
         {
-            bool post = PostProcessing;
+            var applied = Applied;
             foreach (var cam in Camera.allCameras)
-            {
-                if (cam.TryGetComponent<UniversalAdditionalCameraData>(out var data) && data.renderType == CameraRenderType.Base)
-                    data.renderPostProcessing = post;
-            }
+                if (cam.TryGetComponent<UniversalAdditionalCameraData>(out var data)) ConfigureCamera(data);
+            // The sun's shadow filter (the pipeline-wide soft shadow quality is not settable at runtime).
+            var sun = RenderSettings.sun;
+            if (sun != null && sun.TryGetComponent<UniversalAdditionalLightData>(out var light))
+                light.softShadowQuality = applied.SoftShadows;
+        }
+
+        /// <summary>Post-processing and post anti-aliasing for a base camera, from the applied preset.</summary>
+        public static void ConfigureCamera(UniversalAdditionalCameraData data)
+        {
+            if (data == null || data.renderType != CameraRenderType.Base) return;
+            var applied = Applied;
+            data.renderPostProcessing = applied.PostFx;
+            data.antialiasing = applied.PostFx ? applied.PostAa : AntialiasingMode.None;
+            data.antialiasingQuality = AntialiasingQuality.Medium;
         }
     }
 }

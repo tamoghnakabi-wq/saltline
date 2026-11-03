@@ -1,0 +1,12 @@
+before warm-up, cold shader cache:
+  [SALTLINE] Benchmark: Kappa loaded in 0.65 s (0.9 s after launch); slowest of its first 10 frames 1699 ms
+before warm-up, warm shader cache:
+  [SALTLINE] Benchmark: Kappa loaded in 0.27 s (0.4 s after launch); slowest of its first 10 frames 106 ms
+after warm-up, cold shader cache:
+  [SALTLINE] Shader warm-up: 91 of 91 states (64 shader variants) in 3.49 s over 12 frames
+  [SALTLINE] Benchmark: shader warm-up waited 2.98 s
+  [SALTLINE] Benchmark: Kappa loaded in 0.90 s (4.8 s after launch); slowest of its first 10 frames 134 ms
+after warm-up, warm shader cache:
+  [SALTLINE] Shader warm-up: 91 of 91 states (64 shader variants) in 0.24 s over 12 frames
+  [SALTLINE] Benchmark: shader warm-up waited 0.24 s
+  [SALTLINE] Benchmark: Kappa loaded in 0.89 s (1.5 s after launch); slowest of its first 10 frames 112 ms
