@@ -4,7 +4,10 @@ An original 4v4 team deathmatch shooter for macOS (Apple silicon) and Windows, m
 Universal Render Pipeline. One map, Kappa Saltworks: a coastal salt works with three lanes (salt pans to the
 north, the pump house in the middle, the dock to the south).
 
-**Status: version 0.1.0, not published.** The macOS build has been played and tested on one MacBook Air M4.
+**Status: version 0.1.0, a first public test release.** Download it from
+[saltline-five.vercel.app](https://saltline-five.vercel.app/#download) or
+[GitHub Releases](https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0).
+The macOS build has been played and tested on one MacBook Air M4.
 The Windows build compiles and packages, but has never been run on a Windows machine. See
 [Known limitations](#known-limitations).
 
@@ -62,8 +65,12 @@ Details and every measurement: [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
 
 ## Downloads and installing
 
-Releases will be on GitHub Releases and the website in `Web/`, with a SHA-256 checksum for every file. None is
-published yet. Neither build is signed by a recognised developer, so:
+Download from the [website](https://saltline-five.vercel.app/#download) or from
+[GitHub Releases](https://github.com/tamoghnakabi-wq/saltline/releases). Each file's SHA-256 checksum is on both,
+and in `SHA256SUMS.txt`. To check a download, compare the output of `shasum -a 256 <file>` (macOS) or
+`Get-FileHash <file>` (PowerShell) with it.
+
+Neither build is signed by a recognised developer, so:
 
 - **macOS** blocks the app the first time. Open System Settings > Privacy & Security, choose Open Anyway next to
   the message about SALTLINE, and confirm with your password. Or run
@@ -142,7 +149,8 @@ The reports of every test run, with their results and what was not tested, are i
 - **No dedicated server, no host migration.** The match ends when the host leaves.
 - **Windows has no shader warm-up.** Its first match will stutter while shaders compile.
 - **No gamepad testing.** Gamepad bindings exist, but no controller has been tried, in the menus or in a match.
-- **Licence not chosen yet.** No licence file has been added.
+- **Licence not chosen yet.** The repository is public, but it has no licence file, so the project's own code
+  and art are not licensed for reuse. Third-party assets keep their own licences ([ATTRIBUTIONS.md](ATTRIBUTIONS.md)).
 
 More detail on each area: [animation](docs/ANIMATION.md#known-limitations), [audio](docs/AUDIO.md#limitations),
 [effects](docs/VFX.md#known-limitations), [performance](docs/TestReports/2026-11-03_M10_Performance.md).

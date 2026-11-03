@@ -1,7 +1,12 @@
 # Releases, versions and distribution
 
-How a release is versioned, packaged, checked and (once approved) published. Nothing here has been published
-yet: there is no public GitHub release and no deployed website.
+How a release is versioned, packaged, checked and published.
+
+- Repository: https://github.com/tamoghnakabi-wq/saltline (public)
+- Releases: https://github.com/tamoghnakabi-wq/saltline/releases
+- Website: https://saltline-five.vercel.app (a Vercel project named `saltline`, built from `Web/`, free Hobby plan)
+
+The releases published so far are listed under [Published releases](#published-releases).
 
 ## Versions
 
@@ -37,7 +42,8 @@ This check is a convenience, not a security boundary. Someone offline, or blocki
 a modified game can skip the check. What actually keeps incompatible builds apart is the protocol check at
 connection approval.
 
-`UpdateManifestUrl` is empty until a public URL exists, and the check then reports "not configured". For tests,
+`UpdateManifestUrl` is `https://saltline-five.vercel.app/version.json`. An empty address turns the check off
+(it reports "not configured"), and the packaging script refuses such builds for a release. For tests,
 `-updateurl <url>` overrides it (`file://` works), and `-noupdatecheck` turns it off. Only `https://` and
 `file://` addresses are read, and the Download button only opens `https://` links. The request times out after
 8 seconds.
@@ -121,18 +127,41 @@ Options to sign, none taken:
 - **SignPath Foundation** signs free, but only for open-source projects with an OSI licence and no proprietary
   components. SALTLINE ships Unity's proprietary player runtime and Mixamo animations, so it does not qualify.
 
-## Publishing (needs the owner's authorization)
+## Publishing
 
-Not done. The steps, in order:
+Each release needs the owner's go-ahead. The steps, in order:
 
-1. Create the GitHub repository (decide public or private: release downloads from a private repository need a
-   GitHub login, so a public download page needs a public repository or another file host).
-2. Decide the website's address (a Vercel project from `Web/`, root directory `Web`). Set
-   `BuildInfo.UpdateManifestUrl` to `https://<site>/version.json`, commit, and rebuild both players.
-3. Package with `--repo` and `--site`, then commit the updated `Web/` data.
-4. `gh release create v<version> Release/v<version>/* --notes-file docs/releases/<version>.md`.
-5. Deploy `Web/` to Vercel. Check that `/version.json` and the download links work and that the checksums on
-   the site match the uploaded files.
-6. Start the published build and confirm the menu shows no update notice. Then start it with
-   `-updateurl file:///…/version.json`, pointing at a local copy with a higher `minimumProtocol`, and confirm
-   the menu blocks online play.
+1. Bump `Version` (and `NetProtocol` if the network changed) in `BuildInfo.cs`, write
+   `docs/releases/<version>.md`, commit, and push.
+2. Build both players from that commit and package them:
+   `python3 Tools/package_release.py --site https://saltline-five.vercel.app`. The repository is taken from the
+   `origin` remote; `--repo OWNER/REPO` overrides it.
+3. Create the release at the commit the players were built from:
+
+   ```bash
+   gh release create v<version> Release/v<version>/*.zip Release/v<version>/SHA256SUMS.txt \
+     --target <commit> --title "SALTLINE <version>" --notes-file docs/releases/<version>.md
+   ```
+
+4. Commit the updated `Web/src/data/release.json` and `Web/public/version.json`, and push.
+5. Deploy the site. The Vercel project is not connected to the repository, so pushing does not deploy it. From
+   `Web/`, with the Vercel CLI signed in to the account that owns the project:
+
+   ```bash
+   vercel link --project saltline   # once per checkout
+   vercel deploy --prod
+   ```
+
+   `Web/vercel.json` sets the framework (Next.js), `npm ci`, and `npm run check && npm run build`, so a release
+   whose data does not match fails the deployment. `vercel link` writes `Web/.env.local` with a short-lived
+   Vercel token: it is ignored by Git and listed in `Web/.vercelignore`, and must never be committed.
+6. Check that `/version.json` and the download links work, and that the checksums on the site match the files on
+   the release.
+7. Start the published build and confirm the menu shows no update notice. For a release that changes the
+   protocol, also start the previous release and confirm its menu blocks online play.
+
+## Published releases
+
+| Version | Date | Commit | Files |
+|---|---|---|---|
+| 0.1.0 | 2026-11-03 | `83c0d07` | [release page](https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0): `SALTLINE-0.1.0-macOS-arm64.zip`, `SALTLINE-0.1.0-Windows-x64.zip`, `SHA256SUMS.txt` |

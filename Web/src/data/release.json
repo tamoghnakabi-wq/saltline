@@ -6,29 +6,29 @@
   "minimumProtocol": 4,
   "minimumVersion": null,
   "released": "2026-11-03",
-  "commit": "0f0133f0e143e661d0d5048bfd3d84bb6596cb2f",
-  "repo": null,
-  "releasePage": null,
-  "checksums": null,
+  "commit": "83c0d0744875412fa105d47216f0af57fa6c94c2",
+  "repo": "tamoghnakabi-wq/saltline",
+  "releasePage": "https://github.com/tamoghnakabi-wq/saltline/releases/tag/v0.1.0",
+  "checksums": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SHA256SUMS.txt",
   "notes": "## First public test release\n\n- 4v4 team deathmatch on Kappa Saltworks: first team to 50 kills, or the most kills after 10 minutes.\n- Five weapons: VK-21 Halyard rifle, SMR-9 Wasp SMG, TS-12 Breaker shotgun and LR-338 Longreach sniper rifle as primaries; P-45 Brace pistol as the sidearm.\n- Sprint, crouch, slide and jump; first- or third-person view.\n- Online play through Unity Relay: one player hosts from the menu and up to seven others join, with no port forwarding. The host runs the match, and the match ends if the host leaves.\n- macOS (Apple silicon) and Windows x64 builds share the same content and network protocol, so they are built to join each other's matches (not yet tested between the two, see below).\n- Graphics presets from Low to Ultra, plus Laptop for thin-and-light machines (the default on Apple-silicon laptops).\n- On first launch the game prepares its shaders in the main menu (3.5\u20135 s on a MacBook Air M4) so the first match does not freeze.\n- The menu checks the website for a newer version when the game starts. When a release changes the network protocol, older versions are asked to update instead of finding no matches.\n\n## Known limitations\n\n- The Windows build has not been tested on Windows hardware yet. Online play has been tested between several copies of the game on one Mac, through Relay; players on separate machines, and Mac with Windows, have not been tested.\n- The macOS app is not notarized by Apple, and the Windows executable is not code-signed, so both systems warn the first time you open the game.\n- One map and one mode.",
   "files": [
     {
       "platform": "macos-arm64",
       "label": "macOS (Apple silicon)",
       "name": "SALTLINE-0.1.0-macOS-arm64.zip",
-      "size": 375673393,
-      "sha256": "0e7748a998a5c0f01a1a50b87bc837784b2579d3669b4e20dbe5311e19cc3deb",
-      "url": null,
-      "built": "2026-11-03T12:24:52Z"
+      "size": 375673528,
+      "sha256": "4366ed01105edf6d0a4660cbfbd973c64ea8bd9a05192e36d5d9e51b66729eab",
+      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SALTLINE-0.1.0-macOS-arm64.zip",
+      "built": "2026-11-03T12:44:30Z"
     },
     {
       "platform": "windows-x64",
       "label": "Windows x64",
       "name": "SALTLINE-0.1.0-Windows-x64.zip",
-      "size": 366479567,
-      "sha256": "87e9bf5de223da832e97b0e8c9cc800c6de4818d35242d955fd627068e217822",
-      "url": null,
-      "built": "2026-11-03T12:25:51Z"
+      "size": 366479535,
+      "sha256": "146adaa12fad1805fe86a18c1f3fe6b7bf48eb2de79c75adfa629df3cd3d6bb1",
+      "url": "https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/SALTLINE-0.1.0-Windows-x64.zip",
+      "built": "2026-11-03T12:45:00Z"
     }
   ]
 }
