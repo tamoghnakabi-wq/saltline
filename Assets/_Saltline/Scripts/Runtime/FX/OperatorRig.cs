@@ -54,18 +54,9 @@ namespace Saltline.FX
         public float LeftHandError { get; private set; }
         public float ClipSpeed { get; private set; }
 
-        struct Arm
-        {
-            public Transform upper, fore, hand;
-            public Vector3 longLocal, acrossLocal;   // wrist -> middle knuckle, index -> little knuckle (hand space)
-            public float palm;                       // wrist to middle knuckle (m)
-            public bool oriented;
-            public bool Valid => upper != null && fore != null && hand != null;
-        }
-
         Transform m_Hips, m_Spine, m_Chest, m_UpperChest, m_Head;
-        Arm m_R, m_L;
-        Arm m_LegR, m_LegL;   // upper leg, lower leg, foot (no hand orientation)
+        ArmChain m_R, m_L;
+        ArmChain m_LegR, m_LegL;   // upper leg, lower leg, foot (no hand orientation)
         float m_Shift;
         bool m_Ready;
 
@@ -92,38 +83,24 @@ namespace Saltline.FX
             m_Head = animator.GetBoneTransform(HumanBodyBones.Head);
             m_R = MakeArm(animator, true);
             m_L = MakeArm(animator, false);
-            m_LegR = new Arm { upper = animator.GetBoneTransform(HumanBodyBones.RightUpperLeg), fore = animator.GetBoneTransform(HumanBodyBones.RightLowerLeg), hand = animator.GetBoneTransform(HumanBodyBones.RightFoot) };
-            m_LegL = new Arm { upper = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg), fore = animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg), hand = animator.GetBoneTransform(HumanBodyBones.LeftFoot) };
+            m_LegR = new ArmChain { upper = animator.GetBoneTransform(HumanBodyBones.RightUpperLeg), fore = animator.GetBoneTransform(HumanBodyBones.RightLowerLeg), hand = animator.GetBoneTransform(HumanBodyBones.RightFoot) };
+            m_LegL = new ArmChain { upper = animator.GetBoneTransform(HumanBodyBones.LeftUpperLeg), fore = animator.GetBoneTransform(HumanBodyBones.LeftLowerLeg), hand = animator.GetBoneTransform(HumanBodyBones.LeftFoot) };
             // Before the first animator update the bones are in the bind pose, authored with the eyes at 1.62 m.
             if (m_Head != null) HeadBelowEye = Mathf.Clamp(1.62f - (m_Head.position.y - transform.position.y), 0f, 0.2f);
             m_Ready = m_R.Valid && m_L.Valid;
         }
 
-        static Arm MakeArm(Animator a, bool right)
+        static ArmChain MakeArm(Animator a, bool right)
         {
-            var arm = new Arm
-            {
-                upper = a.GetBoneTransform(right ? HumanBodyBones.RightUpperArm : HumanBodyBones.LeftUpperArm),
-                fore = a.GetBoneTransform(right ? HumanBodyBones.RightLowerArm : HumanBodyBones.LeftLowerArm),
-                hand = a.GetBoneTransform(right ? HumanBodyBones.RightHand : HumanBodyBones.LeftHand),
-            };
-            if (!arm.Valid) return arm;
-            var middle = a.GetBoneTransform(right ? HumanBodyBones.RightMiddleProximal : HumanBodyBones.LeftMiddleProximal);
-            var index = a.GetBoneTransform(right ? HumanBodyBones.RightIndexProximal : HumanBodyBones.LeftIndexProximal);
             var little = a.GetBoneTransform(right ? HumanBodyBones.RightLittleProximal : HumanBodyBones.LeftLittleProximal);
             if (little == null) little = a.GetBoneTransform(right ? HumanBodyBones.RightRingProximal : HumanBodyBones.LeftRingProximal);
-            if (middle != null && index != null && little != null)
-            {
-                // Finger roots are children of the hand, so these are the same in every pose.
-                Vector3 l = arm.hand.InverseTransformDirection(middle.position - arm.hand.position);
-                Vector3 c = arm.hand.InverseTransformDirection(little.position - index.position);
-                arm.palm = Vector3.Distance(middle.position, arm.hand.position);
-                arm.longLocal = l.normalized;
-                arm.acrossLocal = Vector3.ProjectOnPlane(c, arm.longLocal).normalized;
-                arm.oriented = arm.acrossLocal.sqrMagnitude > 0.5f;
-            }
-            else arm.palm = 0.09f;
-            return arm;
+            return ArmChain.Create(
+                a.GetBoneTransform(right ? HumanBodyBones.RightUpperArm : HumanBodyBones.LeftUpperArm),
+                a.GetBoneTransform(right ? HumanBodyBones.RightLowerArm : HumanBodyBones.LeftLowerArm),
+                a.GetBoneTransform(right ? HumanBodyBones.RightHand : HumanBodyBones.LeftHand),
+                a.GetBoneTransform(right ? HumanBodyBones.RightMiddleProximal : HumanBodyBones.LeftMiddleProximal),
+                a.GetBoneTransform(right ? HumanBodyBones.RightIndexProximal : HumanBodyBones.LeftIndexProximal),
+                little);
         }
 
         /// <summary>Hand the rig the third-person weapon (a WeaponModel holder whose origin is the right-hand grip).</summary>
@@ -367,30 +344,8 @@ namespace Saltline.FX
             LeftHandError = Vector3.Distance(m_L.hand.position, lWrist);
         }
 
-        /// <summary>Analytic two-bone IK: elbow in the plane of shoulder, target and pole; then the hand orientation,
-        /// with half of its twist taken by the forearm so the wrist does not candy-wrap.</summary>
-        static void Solve(in Arm arm, Vector3 target, Vector3 pole, Vector3 handLong, Vector3 handAcross)
-        {
-            TwoBoneIK.Solve(arm.upper, arm.fore, arm.hand, target, pole);
-            if (!arm.oriented) return;
-
-            Quaternion local = Quaternion.LookRotation(arm.longLocal, arm.acrossLocal);
-            Quaternion want = Quaternion.LookRotation(handLong, Vector3.ProjectOnPlane(handAcross, handLong)) * Quaternion.Inverse(local);
-            Vector3 axis = (arm.hand.position - arm.fore.position).normalized;
-            Quaternion delta = want * Quaternion.Inverse(arm.hand.rotation);
-            Vector3 proj = Vector3.Project(new Vector3(delta.x, delta.y, delta.z), axis);
-            var twist = new Quaternion(proj.x, proj.y, proj.z, delta.w);
-            float mag = Mathf.Sqrt(twist.x * twist.x + twist.y * twist.y + twist.z * twist.z + twist.w * twist.w);
-            if (mag > 1e-5f)
-            {
-                twist = new Quaternion(twist.x / mag, twist.y / mag, twist.z / mag, twist.w / mag);
-                twist.ToAngleAxis(out float angle, out Vector3 ax);
-                if (angle > 180f) angle -= 360f;
-                if (float.IsFinite(angle) && ax.sqrMagnitude > 0.5f)
-                    arm.fore.rotation = Quaternion.AngleAxis(angle * 0.5f, ax) * arm.fore.rotation;
-            }
-            arm.hand.rotation = want;
-        }
+        static void Solve(in ArmChain arm, Vector3 target, Vector3 pole, Vector3 handLong, Vector3 handAcross)
+            => ArmChain.Solve(arm, target, pole, handLong, handAcross);
 
         static float Smooth(float t) { t = Mathf.Clamp01(t); return t * t * (3f - 2f * t); }
         static float Ramp(float x, float a, float b) => Smooth((x - a) / (b - a));

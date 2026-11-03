@@ -8,6 +8,7 @@
         "Unity.Networking.Transport",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.Animation.Rigging",
         "Unity.Multiplayer.Tools.NetworkSimulator.Runtime"

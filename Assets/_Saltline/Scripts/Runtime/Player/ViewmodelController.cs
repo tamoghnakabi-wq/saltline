@@ -1,5 +1,6 @@
 using Saltline.Combat;
 using Saltline.FX;
+using Saltline.Net;
 using Saltline.Weapons;
 using UnityEngine;
 
@@ -7,14 +8,15 @@ namespace Saltline.Player
 {
     /// <summary>
     /// First-person weapon presentation: hip/ADS placement, look sway, movement bob, sprint
-    /// pose, reload/equip motion and a spring-driven visual kick. Purely cosmetic: aim is
-    /// never affected by anything here.
+    /// pose, reload/equip motion and a spring-driven visual kick, plus the operator's arms
+    /// posed on the gun (FirstPersonArms). Purely cosmetic: aim is never affected by anything here.
     /// </summary>
     [DefaultExecutionOrder(300)]
     public sealed class ViewmodelController : MonoBehaviour
     {
         public static ViewmodelController Current { get; private set; }
         public Transform Muzzle { get; private set; }
+        public Transform Eject { get; private set; }
 
         NetPlayer m_P;
         LocalPlayerController m_C;
@@ -29,6 +31,18 @@ namespace Saltline.Player
         Vector3 m_KickPos, m_KickRot;
         float m_Bob;
         float m_SprintBlend;
+        float m_ReloadBlend;
+
+        /// <summary>Where a reload takes the gun (camera space, at full blend): up, in towards the centre and canted,
+        /// so the magazine well and the support hand stay in view.</summary>
+        public static readonly Vector3 ReloadShift = new Vector3(-0.07f, 0.07f, -0.03f);
+        public static readonly Vector3 ReloadTilt = new Vector3(-8f, -10f, -28f);   // muzzle up, towards the centre, left side up
+        float m_LastProgress;
+        FirstPersonArms m_Arms;
+        Team m_ArmsTeam = (Team)255;
+
+        /// <summary>Diagnostics: the first-person arms, when the arms model is installed.</summary>
+        public FirstPersonArms Arms => m_Arms;
 
         public void Init(NetPlayer p, LocalPlayerController c, PlayerCameraRig rig)
         {
@@ -37,12 +51,19 @@ namespace Saltline.Player
             m_Rig = rig;
             Current = this;
             CombatEvents.Shot += OnShot;
+            var lib = PresentationLibrary.Instance;
+            if (lib != null && lib.armsPrefab != null)
+            {
+                m_Arms = Instantiate(lib.armsPrefab, transform, false).GetComponent<FirstPersonArms>();
+                if (m_Arms != null) m_Arms.SetLayer(Layers.Viewmodel);
+            }
         }
 
         void OnDestroy()
         {
             CombatEvents.Shot -= OnShot;
             if (Current == this) Current = null;
+            if (FxManager.Instance != null) FxManager.Instance.SetViewmodelGun(null, null);
         }
 
         void OnShot(ShotFx fx, bool local)
@@ -86,10 +107,7 @@ namespace Saltline.Player
             {
                 case WeaponAction.Reloading:
                 case WeaponAction.ShellReloading:
-                    float k = Mathf.Sin(p * Mathf.PI);
-                    lower = k * 0.06f;
-                    actionRot = new Vector3(k * 12f, 0f, k * 22f);
-                    break;
+                    break;   // see the reload blend below
                 case WeaponAction.Equipping:
                     lower = (1f - p) * 0.28f;
                     actionRot = new Vector3((1f - p) * 30f, 0f, 0f);
@@ -104,6 +122,14 @@ namespace Saltline.Player
                     break;
             }
 
+            // Reload: a magazine change rises into its pose and settles back as it ends; a shell reload holds the pose
+            // through its lead-in and every shell (its progress restarts per shell), easing in and out over time.
+            float reloadTarget = ws.Action == WeaponAction.Reloading ? Mathf.SmoothStep(0f, 1f, p / 0.12f) * (1f - Mathf.SmoothStep(0f, 1f, (p - 0.86f) / 0.14f))
+                : ws.Action == WeaponAction.ShellReloading ? 1f : 0f;
+            m_ReloadBlend = Mathf.Lerp(m_ReloadBlend, reloadTarget, 1f - Mathf.Exp(-12f * dt));
+            Vector3 reloadPos = ReloadShift * m_ReloadBlend;
+            actionRot += ReloadTilt * m_ReloadBlend;
+
             m_KickPos = Vector3.Lerp(m_KickPos, Vector3.zero, 1f - Mathf.Exp(-16f * dt));
             m_KickRot = Vector3.Lerp(m_KickRot, Vector3.zero, 1f - Mathf.Exp(-14f * dt));
 
@@ -112,14 +138,31 @@ namespace Saltline.Player
             Vector3 basePos = Vector3.Lerp(w.viewmodelOffset, adsPos, ads);
             Vector3 sprintPos = new Vector3(-0.06f, -0.05f, -0.04f) * m_SprintBlend;
             Vector3 sprintRot = new Vector3(8f, -28f, 12f) * m_SprintBlend;
-            m_Gun.localPosition = basePos + bob + sprintPos + m_KickPos + Vector3.down * lower;
+            m_Gun.localPosition = basePos + bob + sprintPos + reloadPos + m_KickPos + Vector3.down * lower;
             m_Gun.localRotation = Quaternion.Euler(m_Sway + m_KickRot + actionRot + sprintRot);
             m_Gun.gameObject.SetActive(pose.Alive);
 
             // Moving parts. An empty reload is remembered from its first frame (ammo changes at the commit point).
             if (ws.Action == WeaponAction.Reloading && m_LastAction != WeaponAction.Reloading) m_ReloadFromEmpty = ws.Mag == 0;
+            // Pump and bolt actions throw the spent case as the action opens.
+            if (ws.Action == WeaponAction.Cycling && p >= 0.4f && (m_LastAction != WeaponAction.Cycling || m_LastProgress < 0.4f) && pose.Alive
+                && FxManager.Instance != null && m_Rig != null && !m_Rig.ThirdPersonActive)
+                FxManager.Instance.EjectShell(Eject, w.weaponClass, pose.Velocity, true);
             m_LastAction = ws.Action;
+            m_LastProgress = p;
             if (m_Parts != null) m_Parts.Tick(ws.Action, p, m_ReloadFromEmpty, ws.Mag == 0, ws.TriggerHeld, dt);
+
+            if (m_Arms != null)
+            {
+                var team = m_P.TeamState.Value;
+                if (team != m_ArmsTeam)
+                {
+                    m_ArmsTeam = team;
+                    var lib = PresentationLibrary.Instance;
+                    if (lib != null) m_Arms.SetTeamMaterial(team == Team.Red ? lib.armsTeamRed : team == Team.Blue ? lib.armsTeamBlue : lib.armsTeamNeutral);
+                }
+                m_Arms.Pose(ws.Action, p, ws.TriggerHeld, pose.Alive, dt, ws.ShellInserting);
+            }
         }
 
         void Rebuild(WeaponDefinition w)
@@ -127,7 +170,10 @@ namespace Saltline.Player
             if (m_Gun != null) Destroy(m_Gun.gameObject);
             m_Gun = WeaponModel.Build(w.weaponClass, transform, Layers.Viewmodel, WeaponView.FirstPerson, out var muzzle, out m_Sight, out m_Parts);
             Muzzle = muzzle;
+            Eject = m_Gun.Find("Eject");
             m_BuiltFor = w.id;
+            if (FxManager.Instance != null) FxManager.Instance.SetViewmodelGun(Muzzle, Eject);
+            if (m_Arms != null) m_Arms.Bind(m_Gun, m_Parts, w.weaponClass, w.viewmodelOffset);
         }
     }
 }

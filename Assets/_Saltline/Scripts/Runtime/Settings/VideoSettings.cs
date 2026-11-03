@@ -98,6 +98,15 @@ namespace Saltline.Settings
         public static Vector2Int SavedResolution => new(PlayerPrefs.GetInt(P + "w", 0), PlayerPrefs.GetInt(P + "h", 0));
 
         public static bool PostProcessing => Values(Preset).PostFx;
+
+        /// <summary>Particle budget for weapon and impact effects (1 = full).</summary>
+        public static float EffectsDetail => Preset switch
+        {
+            QualityPreset.Low => 0.4f,
+            QualityPreset.Medium => 0.7f,
+            QualityPreset.Laptop => 0.7f,
+            _ => 1f,
+        };
         public static float EffectiveRenderScale => RenderScaleOverride > 0f ? RenderScaleOverride : Values(Preset).RenderScale;
 
         /// <summary>First launch: Apple-silicon laptops start on the laptop preset, everything else on High.</summary>

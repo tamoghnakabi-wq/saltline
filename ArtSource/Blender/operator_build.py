@@ -1036,3 +1036,74 @@ def finalize_operator(out_dir, res=2048, lod_ratios=(0.5, 0.22)):
     st["fbx"] = path
     st["total_seconds"] = round(time.time() - t0, 1)
     return st
+
+
+# --------------------------------------------------------------------------- first-person arms
+ARM_BONE_PREFIXES = ("LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand")
+
+
+def finalize_arms(out_dir, res=2048):
+    """First-person arms: the same operator, rigged and skinned the same way, cut down to the faces carried by
+    the arm, hand and finger bones, unwrapped on their own and baked at full resolution (T_OPA_D/N/M) for the
+    close first-person view. Exports SK_OperatorArms.fbx with the full skeleton, so it shares the operator's
+    Humanoid avatar layout. Returns stats."""
+    import bmesh
+    global AO_DISTANCE
+    t0 = time.time()
+    b = build()
+    arm = armature()
+    st = skin(b, arm)
+    me = b.data
+    names = [g.name for g in b.vertex_groups]
+    share = []
+    for v in me.vertices:
+        tot = sum(g.weight for g in v.groups) or 1.0
+        a = sum(g.weight for g in v.groups if names[g.group].startswith(ARM_BONE_PREFIXES))
+        share.append(a / tot)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    kill = [f for f in bm.faces if sum(share[v.index] for v in f.verts) / len(f.verts) < 0.5]
+    bmesh.ops.delete(bm, geom=kill, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    bmesh.ops.delete(bm, geom=loose, context="VERTS")
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    st["arm_tris"] = sum(len(p.vertices) - 2 for p in me.polygons)
+    pack_uvs(b)
+    AO_DISTANCE = 0.05
+    BUMP.clear()
+    BUMP.update(CHAR_BUMP)
+    try:
+        st.update(bake_weapon(b, res, out_dir, "OPA"))
+    finally:
+        BUMP.clear()
+        MATERIAL_HOOKS.clear()
+        AO_DISTANCE = 0.035
+    if st["uv_coverage"] < 0.2:
+        raise RuntimeError(f"arms bake covered only {st['uv_coverage']:.1%} of the texture")
+    surf = list(SURFACES.keys())
+    team = surf.index("team")
+    me.materials.clear()
+    me.materials.append(_placeholder_material("M_OPA_Main"))
+    me.materials.append(_placeholder_material("M_OPA_Team"))
+    for poly, a in zip(me.polygons, me.attributes["surface_id"].data):
+        poly.material_index = 1 if a.value == team else 0
+    st["surfaces"] = sorted({surf[a.value] for a in me.attributes["surface_id"].data})
+    b.name = me.name = "OPA_Arms"
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, "SK_OperatorArms.fbx")
+    bpy.ops.object.select_all(action="DESELECT")
+    b.select_set(True)
+    arm.select_set(True)
+    bpy.context.view_layer.objects.active = arm
+    bpy.ops.export_scene.fbx(
+        filepath=path, use_selection=True, object_types={"ARMATURE", "MESH"},
+        apply_unit_scale=True, apply_scale_options="FBX_SCALE_ALL", bake_space_transform=False,
+        axis_forward="-Z", axis_up="Y", use_mesh_modifiers=False, mesh_smooth_type="OFF",
+        add_leaf_bones=False, primary_bone_axis="Y", secondary_bone_axis="X", use_armature_deform_only=False,
+        armature_nodetype="NULL", bake_anim=False, path_mode="STRIP", embed_textures=False, use_triangles=True,
+        use_custom_props=False)
+    st["fbx"] = path
+    st["total_seconds"] = round(time.time() - t0, 1)
+    return st

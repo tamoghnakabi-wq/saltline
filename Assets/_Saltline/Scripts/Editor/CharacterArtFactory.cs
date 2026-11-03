@@ -24,6 +24,9 @@ namespace Saltline.EditorTools
         public const string ModelPath = Dir + "/SK_Operator.fbx";
         public const string ControllerPath = Dir + "/AC_Operator.controller";
         public const string PrefabPath = "Assets/_Saltline/Prefabs/Player/P_Operator.prefab";
+        public const string ArmsDir = ContentFactory.ArtDir + "/Characters/Arms";
+        public const string ArmsModelPath = ArmsDir + "/SK_OperatorArms.fbx";
+        public const string ArmsPrefabPath = "Assets/_Saltline/Prefabs/Player/P_OperatorArms.prefab";
 
         // 8 directions, clockwise from forward: file-name suffix and blend direction (x right, y forward).
         static readonly (string suffix, Vector2 dir)[] Directions =
@@ -58,7 +61,74 @@ namespace Saltline.EditorTools
             var clips = ImportClips();
             var controller = BuildController(clips);
             lib.operatorPrefab = BuildPrefab(avatar, controller, clips);
+            BuildArms(lib);
             EditorUtility.SetDirty(lib);
+        }
+
+        /// <summary>
+        /// The first-person arms: the operator's arms cut from the same body (operator_build.py finalize_arms writes
+        /// Art/Characters/Arms/SK_OperatorArms.fbx with T_OPA_D/_N/_M). Imported without an animator; FirstPersonArms
+        /// poses them procedurally on the viewmodel gun.
+        /// </summary>
+        static void BuildArms(PresentationLibrary lib)
+        {
+            lib.armsPrefab = null;
+            if (!File.Exists(ArmsModelPath)) { Debug.LogWarning("[SALTLINE] Arms: model missing, the first-person gun is shown without hands."); return; }
+            WeaponArtFactory.ConfigureTextures(ArmsDir, "OPA");
+            AssetDatabase.Refresh();
+            var main = WeaponArtFactory.Body(ArmsDir, "OPA", ArmsDir + "/M_OPA_Main.mat");
+            if (main == null) { Debug.LogWarning("[SALTLINE] Arms: textures missing."); return; }
+            lib.armsTeamRed = Tinted(main, ArmsDir + "/M_OPA_TeamRed.mat", new Color(0.86f, 0.16f, 0.11f));
+            lib.armsTeamBlue = Tinted(main, ArmsDir + "/M_OPA_TeamBlue.mat", new Color(0.14f, 0.40f, 0.98f));
+            lib.armsTeamNeutral = Tinted(main, ArmsDir + "/M_OPA_TeamNeutral.mat", new Color(0.78f, 0.78f, 0.74f));
+
+            var mi = (ModelImporter)AssetImporter.GetAtPath(ArmsModelPath);
+            mi.globalScale = 1f;
+            mi.useFileScale = true;
+            mi.importCameras = false;
+            mi.importLights = false;
+            mi.importVisibility = false;
+            mi.importBlendShapes = false;
+            mi.importAnimation = false;
+            // Generic keeps the skin and bones (None would bake the mesh static); the prefab drops the Animator,
+            // since FirstPersonArms poses the bones in code.
+            mi.animationType = ModelImporterAnimationType.Generic;
+            mi.avatarSetup = ModelImporterAvatarSetup.NoAvatar;
+            mi.optimizeGameObjects = false;
+            mi.isReadable = false;
+            mi.meshCompression = ModelImporterMeshCompression.Off;
+            mi.meshOptimizationFlags = MeshOptimizationFlags.Everything;
+            mi.importNormals = ModelImporterNormals.Import;
+            mi.importTangents = ModelImporterTangents.CalculateMikk;
+            mi.skinWeights = ModelImporterSkinWeights.Standard;
+            mi.addCollider = false;
+            mi.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            mi.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            mi.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material), "M_OPA_Main"), main);
+            mi.AddRemap(new AssetImporter.SourceAssetIdentifier(typeof(Material), "M_OPA_Team"), lib.armsTeamNeutral);
+            mi.SaveAndReimport();
+
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(ArmsModelPath);
+            if (model == null) { Debug.LogWarning("[SALTLINE] Arms: import failed."); return; }
+            var root = new GameObject("P_OperatorArms");
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(model);
+            inst.transform.SetParent(root.transform, false);
+            foreach (var a in inst.GetComponentsInChildren<Animator>(true)) Object.DestroyImmediate(a);
+            var smrs = inst.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            foreach (var smr in smrs)
+            {
+                smr.updateWhenOffscreen = false;
+                smr.quality = SkinQuality.Bone4;
+                smr.skinnedMotionVectors = false;
+                smr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            var arms = root.AddComponent<FirstPersonArms>();
+            arms.model = inst.transform;
+            int tris = smrs.Sum(r => r.sharedMesh != null ? r.sharedMesh.triangles.Length / 3 : 0);
+            string mats = string.Join(", ", smrs.SelectMany(r => r.sharedMaterials).Select(m => m != null ? m.name : "none"));
+            lib.armsPrefab = PrefabUtility.SaveAsPrefabAsset(root, ArmsPrefabPath);
+            Object.DestroyImmediate(root);
+            Debug.Log($"[SALTLINE] Arms: prefab {ArmsPrefabPath}, {smrs.Length} skinned mesh(es), {tris} tris, materials {mats}");
         }
 
         static Material Tinted(Material main, string path, Color tint)

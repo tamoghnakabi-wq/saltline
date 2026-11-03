@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
+using Saltline.Combat;
 using Saltline.Core;
 using Saltline.FX;
 using Saltline.Player;
@@ -29,6 +30,11 @@ namespace Saltline.Diagnostics
     /// With -characters, it shows the animated operator in front of that view (-characterview NAME)
     /// in a set of poses (idle, walk, run, sprint, strafe, crouch, aim up/down, reload, each weapon,
     /// jump, slide, death) and logs how far the hands ended from their IK targets.
+    ///
+    /// With -fx, it reviews the weapon effects at a fixed 60 Hz step: impacts on concrete, metal,
+    /// wood and ground test panels (burst, dust, bullet holes, close-ups), every weapon's muzzle
+    /// flash from the side and in first person, a burst with spent cases and barrel smoke, a body
+    /// hit and a tracer, logging particle, decal and case counts.
     /// </summary>
     public sealed class MapTour : MonoBehaviour
     {
@@ -102,6 +108,8 @@ namespace Saltline.Diagnostics
                 yield return WeaponShowcase(cam, views.transform, adapt, dir, rt, tex);
             if (CommandLine.Has("characters"))
                 yield return CharacterShowcase(cam, views.transform, adapt, dir, rt, tex);
+            if (CommandLine.Has("fx"))
+                yield return FxShowcase(cam, views.transform, adapt, dir, rt, tex);
             cam.targetTexture = null;
             rt.Release();
             Debug.Log($"[SALTLINE] MapTour done: {saved} views of {scene} ({SystemInfo.graphicsDeviceName}, {SystemInfo.graphicsDeviceType}, quality '{QualitySettings.names[QualitySettings.GetQualityLevel()]}')");
@@ -131,22 +139,37 @@ namespace Saltline.Diagnostics
                 var holder = new GameObject("Showcase").transform;
                 holder.SetParent(cam.transform, false);
                 var gun = WeaponModel.Build(w.weaponClass, holder, 0, WeaponView.FirstPerson, out var muzzle, out var sight, out var rig);
-                Vector3 ads = new Vector3(0f, 0f, w.adsEyeRelief) - sight.localPosition;
-                var poses = new (string name, Vector3 pos, Vector3 euler, float reload)[]
+                FirstPersonArms arms = null;
+                if (lib.armsPrefab != null)
                 {
-                    ("hip", w.viewmodelOffset, Vector3.zero, -1f),
-                    ("ads", ads, Vector3.zero, -1f),
-                    ("reload", w.viewmodelOffset + Vector3.down * 0.05f, new Vector3(11f, 0f, 20f), 0.24f),
-                    ("side", new Vector3(0.02f, -0.02f, 0.62f), new Vector3(8f, 72f, 0f), -1f),
+                    arms = Instantiate(lib.armsPrefab, holder, false).GetComponent<FirstPersonArms>();
+                    arms.SetLayer(0);
+                    arms.SetTeamMaterial(lib.armsTeamBlue);
+                    arms.Bind(gun, rig, w.weaponClass, w.viewmodelOffset);
+                }
+                Vector3 ads = new Vector3(0f, 0f, w.adsEyeRelief) - sight.localPosition;
+                bool shells = w.weaponClass == WeaponClass.Shotgun;
+                bool cycles = w.fireMode == FireMode.PumpAction || w.fireMode == FireMode.BoltAction;
+                var reloadAction = shells ? WeaponAction.ShellReloading : WeaponAction.Reloading;
+                Vector3 reloadPos = w.viewmodelOffset + ViewmodelController.ReloadShift, reloadRot = ViewmodelController.ReloadTilt;
+                var poses = new System.Collections.Generic.List<(string name, Vector3 pos, Vector3 euler, WeaponAction action, float p, bool hands)>
+                {
+                    ("hip", w.viewmodelOffset, Vector3.zero, WeaponAction.Ready, 1f, true),
+                    ("ads", ads, Vector3.zero, WeaponAction.Ready, 1f, true),
+                    ("reload", reloadPos, reloadRot, reloadAction, shells ? 0.12f : 0.06f, true),
+                    ("reload_insert", reloadPos, reloadRot, reloadAction, shells ? 0.5f : 0.62f, true),
                 };
+                if (cycles) poses.Add(("cycle", w.viewmodelOffset, new Vector3(4f, 0f, -8f), WeaponAction.Cycling, 0.4f, true));
+                poses.Add(("side", new Vector3(0.02f, -0.02f, 0.62f), new Vector3(8f, 72f, 0f), WeaponAction.Ready, 1f, false));
                 foreach (var pose in poses)
                 {
                     gun.localPosition = pose.pos;
                     gun.localRotation = Quaternion.Euler(pose.euler);
-                    if (rig != null)
+                    if (rig != null) rig.Tick(pose.action, pose.p, true, pose.action == WeaponAction.Reloading, false, 0f);
+                    if (arms != null)
                     {
-                        if (pose.reload >= 0f) rig.Tick(WeaponAction.Reloading, pose.reload, true, true, false, 0f);
-                        else rig.Tick(WeaponAction.Ready, 1f, false, false, false, 0f);
+                        arms.Pose(pose.action, pose.p, false, pose.hands, 1f, shells && pose.name == "reload_insert");
+                        if (pose.hands) Debug.Log($"[SALTLINE] MapTour arms {w.shortName} {pose.name}: wrist error right {arms.RightHandError * 1000f:F0} mm, left {arms.LeftHandError * 1000f:F0} mm");
                     }
                     for (int i = 0; i < 2; i++) { cam.Render(); yield return null; }
                     cam.Render();
@@ -180,6 +203,249 @@ namespace Saltline.Diagnostics
             tex.Apply(false);
             RenderTexture.active = prev;
             File.WriteAllBytes(path, tex.EncodeToPNG());
+        }
+
+        // ------------------------------------------------------------------ effects
+
+        static IEnumerator Frames(int n)
+        {
+            for (int i = 0; i < n; i++) yield return null;
+        }
+
+        static Material SceneMaterial(string name)
+        {
+            foreach (var r in FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None))
+                foreach (var m in r.sharedMaterials)
+                    if (m != null && m.name == name) return m;
+            return null;
+        }
+
+        IEnumerator FxShowcase(Camera cam, Transform views, ExposureAdaptation adapt, string dir, RenderTexture rt, Texture2D tex)
+        {
+            var lib = PresentationLibrary.Instance;
+            var db = lib != null ? lib.weapons : null;
+            var view = views.Find("VIEW_" + CommandLine.Get("fxview", CommandLine.Get("weaponview", "04_mid_courtyard")));
+            FxManager.Ensure();
+            yield return null;
+            var fx = FxManager.Instance;
+            if (db == null || view == null || fx == null)
+            {
+                Debug.LogError("[SALTLINE] MapTour: no weapon data, FX view or FxManager.");
+                yield break;
+            }
+            Time.captureDeltaTime = 1f / 60f;
+            float fov = cam.fieldOfView, near = cam.nearClipPlane;
+            int mask = cam.cullingMask;
+            cam.orthographic = false;
+            cam.cullingMask = mask | (1 << Layers.Viewmodel) | (1 << Layers.Debris);
+            adapt.enabled = true;
+
+            Vector3 flat = view.forward;
+            flat.y = 0f;
+            flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : Vector3.forward;
+            Vector3 right = Vector3.Cross(Vector3.up, flat);
+            Vector3 eye = view.position;
+            Vector3 ground = eye + flat * 4f;
+            if (Physics.Raycast(ground + Vector3.up * 3f, Vector3.down, out var gh, 30f, Layers.EnvironmentMask, QueryTriggerInteraction.Ignore)) ground = gh.point;
+            eye = ground - flat * 4f + Vector3.up * 1.6f;
+
+            // Test panels: the map's own materials and surface types.
+            var panels = new (string mat, SurfaceType surface, string label)[]
+            {
+                ("M_Concrete", SurfaceType.Concrete, "concrete"), ("M_Container", SurfaceType.Metal, "metal"),
+                ("M_Wood", SurfaceType.Wood, "wood"), ("M_Salt", SurfaceType.Dirt, "ground"),
+            };
+            var made = new GameObject("FxPanels");
+            var centers = new Vector3[panels.Length];
+            for (int i = 0; i < panels.Length; i++)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                go.name = "FxPanel_" + panels[i].label;
+                go.layer = Layers.Environment;
+                go.transform.SetParent(made.transform, false);
+                centers[i] = ground + flat * 0.6f + right * ((i - 1.5f) * 1.45f) + Vector3.up * 0.75f;
+                go.transform.SetPositionAndRotation(centers[i], Quaternion.LookRotation(flat));
+                go.transform.localScale = new Vector3(1.25f, 1.5f, 0.2f);
+                var m = SceneMaterial(panels[i].mat);
+                if (m != null) go.GetComponent<MeshRenderer>().sharedMaterial = m;
+                go.AddComponent<SurfaceTag>().surface = panels[i].surface;
+            }
+            Physics.SyncTransforms();
+            cam.fieldOfView = 55f;
+            cam.nearClipPlane = 0.02f;
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(ground + Vector3.up * 0.8f - eye));
+            adapt.Snap();
+            yield return Frames(2);
+
+            // 1. Impacts: four shots per panel, traced from the eye like real bullets.
+            var shotsAt = new[] { new Vector2(-0.3f, 0.35f), new Vector2(0.25f, 0.2f), new Vector2(-0.1f, -0.3f), new Vector2(0.3f, -0.35f) };
+            var sw = Stopwatch.StartNew();
+            int impacts = 0;
+            for (int i = 0; i < panels.Length; i++)
+                foreach (var o in shotsAt)
+                {
+                    Vector3 target = centers[i] - flat * 0.1f + right * o.x + Vector3.up * o.y;
+                    Vector3 d = (target - eye).normalized;
+                    if (Physics.Raycast(eye, d, out var h, 20f, Layers.EnvironmentMask, QueryTriggerInteraction.Ignore))
+                    {
+                        fx.Impact(h.point, h.normal, d, SurfaceTag.TypeOf(h.collider));
+                        impacts++;
+                    }
+                }
+            sw.Stop();
+            Debug.Log($"[SALTLINE] MapTour fx: {impacts} impacts emitted in {sw.Elapsed.TotalMilliseconds:F2} ms; {fx.ParticleCount} particles, {fx.ActiveMarks} bullet holes");
+            yield return Frames(2);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_impacts_burst.png"));
+            yield return Frames(24);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_impacts_dust.png"));
+            Debug.Log($"[SALTLINE] MapTour fx impacts at 0.43 s: {fx.ParticleCount} particles");
+            yield return Frames(150);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_impacts_holes.png"));
+            Debug.Log($"[SALTLINE] MapTour fx impacts at 2.9 s: {fx.ParticleCount} particles, {fx.ActiveMarks} bullet holes");
+            cam.fieldOfView = 38f;
+            for (int i = 0; i < panels.Length; i++)
+            {
+                Vector3 face = centers[i] - flat * 0.1f;
+                Vector3 p = face - flat * 0.75f + right * 0.22f + Vector3.up * 0.12f;
+                cam.transform.SetPositionAndRotation(p, Quaternion.LookRotation(face - p));
+                adapt.Snap();
+                yield return Frames(2);
+                Capture(cam, rt, tex, Path.Combine(dir, $"fx_hole_{panels[i].label}.png"));
+            }
+
+            // 2. Muzzle flash from the side, every weapon, and smoke after a burst.
+            cam.fieldOfView = 45f;
+            Vector3 side = ground + Vector3.up * 1.3f - flat * 1.6f;
+            Vector3 camPos = side - flat * 1.7f + Vector3.up * 0.05f;
+            cam.transform.SetPositionAndRotation(camPos, Quaternion.LookRotation(side + right * 0.35f - camPos));
+            adapt.Snap();
+            foreach (var w in db.weapons)
+            {
+                if (w == null) continue;
+                var holder = new GameObject("FxGun").transform;
+                holder.SetPositionAndRotation(side - right * 0.15f, Quaternion.LookRotation(right));
+                var gun = WeaponModel.Build(w.weaponClass, holder, 0, WeaponView.Display, out var muzzle, out _, out var gunRig);
+                yield return Frames(2);
+                Vector3 aim = right;
+                fx.MuzzleWorld(muzzle != null ? muzzle.position : side, aim, w, Vector3.zero);
+                fx.SpawnLight(muzzle != null ? muzzle.position : side, aim, w);
+                var eject = gun.Find("Eject");
+                if (FxManager.EjectsOnShot(w.weaponClass)) fx.EjectShell(eject, w.weaponClass, Vector3.zero, false);
+                if (gunRig != null) gunRig.OnShot(w.FireInterval);
+                yield return Frames(1);
+                Capture(cam, rt, tex, Path.Combine(dir, $"fx_flash_{w.shortName}.png"));
+                if (w.weaponClass == WeaponClass.AssaultRifle)
+                {
+                    for (int k = 0; k < 7; k++)
+                    {
+                        yield return Frames(6);
+                        fx.MuzzleWorld(muzzle.position, aim, w, Vector3.zero);
+                        fx.SpawnLight(muzzle.position, aim, w);
+                        fx.EjectShell(eject, w.weaponClass, Vector3.zero, false);
+                        if (gunRig != null) gunRig.OnShot(w.FireInterval);
+                    }
+                    yield return Frames(3);
+                    Capture(cam, rt, tex, Path.Combine(dir, "fx_burst_AR_cases.png"));
+                    yield return Frames(30);
+                    Capture(cam, rt, tex, Path.Combine(dir, "fx_burst_AR_smoke.png"));
+                    Debug.Log($"[SALTLINE] MapTour fx burst: {fx.Shells.Active} cases live, {fx.ParticleCount} particles");
+                }
+                Destroy(holder.gameObject);
+                yield return Frames(20);
+            }
+
+            // Spent cases on the ground after the burst, framed on where they came to rest.
+            cam.fieldOfView = 35f;
+            Vector3 drop = side;
+            if (fx.Shells.RestingCentroid(out var rest, out int resting)) drop = rest;
+            else if (Physics.Raycast(drop, Vector3.down, out var dh, 5f, Layers.EnvironmentMask, QueryTriggerInteraction.Ignore)) drop = dh.point;
+            Debug.Log($"[SALTLINE] MapTour fx cases: {resting} at rest around {drop - ground} from the panels' ground point");
+            camPos = drop + right * 0.9f + Vector3.up * 0.55f;
+            cam.transform.SetPositionAndRotation(camPos, Quaternion.LookRotation(drop - camPos));
+            adapt.Snap();
+            yield return Frames(2);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_cases_ground.png"));
+
+            // 3. First person: the gun on the viewmodel layer at its hip and aiming positions.
+            cam.fieldOfView = 56f;
+            cam.nearClipPlane = 0.01f;
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(flat + Vector3.down * 0.05f));
+            adapt.Snap();
+            foreach (var w in db.weapons)
+            {
+                if (w == null) continue;
+                var holder = new GameObject("FxViewmodel").transform;
+                holder.SetParent(cam.transform, false);
+                var gun = WeaponModel.Build(w.weaponClass, holder, Layers.Viewmodel, WeaponView.FirstPerson, out var muzzle, out var sight, out var gunRig);
+                gun.localPosition = w.viewmodelOffset;
+                var eject = gun.Find("Eject");
+                fx.SetViewmodelGun(muzzle, eject);
+                FirstPersonArms arms = null;
+                if (lib.armsPrefab != null)
+                {
+                    arms = Instantiate(lib.armsPrefab, holder, false).GetComponent<FirstPersonArms>();
+                    arms.SetLayer(Layers.Viewmodel);
+                    arms.SetTeamMaterial(lib.armsTeamRed);
+                    arms.Bind(gun, gunRig, w.weaponClass, w.viewmodelOffset);
+                    arms.Pose(WeaponAction.Ready, 1f, true, true, 1f);
+                }
+                yield return Frames(2);
+                int shots = w.weaponClass == WeaponClass.AssaultRifle ? 10 : 1;
+                for (int k = 0; k < shots; k++)
+                {
+                    if (k > 0) yield return Frames(6);
+                    fx.MuzzleFirstPerson(w, cam.transform.forward, Vector3.zero, 0f);
+                    fx.SpawnLight(muzzle.position, cam.transform.forward, w);
+                    fx.SpawnTracer(muzzle.position, eye + cam.transform.forward * 60f, w);
+                    if (FxManager.EjectsOnShot(w.weaponClass)) fx.EjectShell(eject, w.weaponClass, Vector3.zero, true);
+                    if (gunRig != null) gunRig.OnShot(w.FireInterval);
+                    if (k == 0 || k == 4)
+                    {
+                        yield return Frames(1);
+                        Capture(cam, rt, tex, Path.Combine(dir, k == 0 ? $"fx_fp_{w.shortName}.png" : "fx_fp_AR_burst.png"));
+                    }
+                }
+                if (w.weaponClass == WeaponClass.AssaultRifle)
+                {
+                    yield return Frames(50);
+                    Capture(cam, rt, tex, Path.Combine(dir, "fx_fp_AR_wisp.png"));
+                    gun.localPosition = new Vector3(0f, 0f, w.adsEyeRelief) - sight.localPosition;
+                    if (arms != null) arms.Pose(WeaponAction.Ready, 1f, true, true, 1f);
+                    yield return Frames(2);
+                    fx.MuzzleFirstPerson(w, cam.transform.forward, Vector3.zero, 1f);
+                    fx.SpawnLight(muzzle.position, cam.transform.forward, w);
+                    yield return Frames(1);
+                    Capture(cam, rt, tex, Path.Combine(dir, "fx_fp_AR_ads.png"));
+                }
+                fx.SetViewmodelGun(null, null);
+                Destroy(holder.gameObject);
+                yield return Frames(30);
+            }
+
+            // 4. A body hit and a passing tracer.
+            cam.fieldOfView = 50f;
+            cam.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(flat));
+            adapt.Snap();
+            Vector3 hitAt = eye + flat * 2.6f + right * 0.3f - Vector3.up * 0.2f;
+            fx.BodyHit(hitAt, (flat + right * 0.3f).normalized);
+            yield return Frames(3);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_body_hit.png"));
+            yield return Frames(12);
+            Capture(cam, rt, tex, Path.Combine(dir, "fx_body_hit_late.png"));
+            var ar = db.weapons.Length > 0 ? db.weapons[0] : null;
+            if (ar != null)
+            {
+                fx.SpawnTracer(eye + right * 0.6f - Vector3.up * 0.3f, eye + right * 6f + flat * 120f + Vector3.up * 3f, ar);
+                yield return Frames(3);
+                Capture(cam, rt, tex, Path.Combine(dir, "fx_tracer.png"));
+            }
+            Debug.Log($"[SALTLINE] MapTour fx done: {fx.ParticleCount} particles, {fx.ActiveMarks} bullet holes, {fx.Shells.Active} cases live");
+
+            Destroy(made);
+            Time.captureDeltaTime = 0f;
+            cam.fieldOfView = fov;
+            cam.nearClipPlane = near;
+            cam.cullingMask = mask;
         }
 
         struct CharacterShot

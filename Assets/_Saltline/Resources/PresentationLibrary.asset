@@ -17,9 +17,9 @@ MonoBehaviour:
   neutralBody: {fileID: 2100000, guid: 420e3c8709cf74cab84f8ac2f1d499f2, type: 2}
   gunMetal: {fileID: 2100000, guid: 39cbea01a64794d5db20b7d29a9858ab, type: 2}
   gunAccent: {fileID: 2100000, guid: 8db29ff3a960e46bf894890d5eaf416b, type: 2}
-  tracer: {fileID: 2100000, guid: a65938c2c7fa44d89ac60c8efbae2944, type: 2}
-  impact: {fileID: 2100000, guid: bccdf5c38c81e43a8bbfeb4e91e00fc5, type: 2}
-  muzzleFlash: {fileID: 2100000, guid: f1a892afa2ee94d369cb2e2065a34cd7, type: 2}
+  tracer: {fileID: 2100000, guid: 2cc5559dadb024de1aa1c73409550178, type: 2}
+  impact: {fileID: 2100000, guid: 9d92658d3005848909cf3c49aea57fd0, type: 2}
+  muzzleFlash: {fileID: 2100000, guid: 85fa95f088b5f405e8fb0498d5aad0a6, type: 2}
   weaponModels:
   - {fileID: 919132149155446097, guid: e602add411ee64ced877ae0632239fc7, type: 3}
   - {fileID: 919132149155446097, guid: a08a4b260fb024495a83367b58a15750, type: 3}
@@ -31,3 +31,16 @@ MonoBehaviour:
   operatorTeamRed: {fileID: 2100000, guid: 878466bf5cc7d4009a6900ff185d6d49, type: 2}
   operatorTeamBlue: {fileID: 2100000, guid: 455e7acf74a4147ef94144e9ee209a95, type: 2}
   operatorTeamNeutral: {fileID: 2100000, guid: 5dadeba944d834a5b9ea9477d72ba73a, type: 2}
+  armsPrefab: {fileID: 4019912216980853864, guid: 6349ad3f597b840e2a1a0ef7331168d5, type: 3}
+  armsTeamRed: {fileID: 2100000, guid: 8da2acb2651184d6c8e46ff508ecd9b8, type: 2}
+  armsTeamBlue: {fileID: 2100000, guid: e3d03f22a578a4fc3b4acfa92a81cc7c, type: 2}
+  armsTeamNeutral: {fileID: 2100000, guid: f10ae3b0f9bfb4431abbe15a3550b62a, type: 2}
+  fxFlash: {fileID: 2100000, guid: 85fa95f088b5f405e8fb0498d5aad0a6, type: 2}
+  fxFlame: {fileID: 2100000, guid: 3e4d95c718a2a42858d42186506461ab, type: 2}
+  fxSpark: {fileID: 2100000, guid: 9d5da6189d5c2466dbd077d352b12084, type: 2}
+  fxGlow: {fileID: 2100000, guid: 9de6aca621ffb43cea20e6f5b4919d11, type: 2}
+  fxSmoke: {fileID: 2100000, guid: 55af06711ec644ea8975f07bc71c8291, type: 2}
+  fxDebris: {fileID: 2100000, guid: c908112568ea74ddf89ce51011ee7008, type: 2}
+  bulletHole: {fileID: 2100000, guid: 9d92658d3005848909cf3c49aea57fd0, type: 2}
+  brass: {fileID: 2100000, guid: 6012e122baf8e4d718ee772b4b323d4e, type: 2}
+  shellHull: {fileID: 2100000, guid: 17cfde8a03dad4a6ea948963ac1be926, type: 2}

@@ -12,6 +12,8 @@ No assets were taken from commercial games.
 - **Weapons:** original designs, modelled in Blender from `ArtSource/Blender/weapons_build.py` (none copies a real firearm). Their textures are baked by `ArtSource/Blender/weapons_lib.py`.
 - **Operator character:** original design (no real unit, insignia or commercial character), modelled, rigged, skinned and baked in Blender from `ArtSource/Blender/operator_build.py`. Its rig uses Mixamo-compatible bone names so it can be set up as a Unity Humanoid.
 - **Weapon handling:** the third-person weapon hold, hand placement and reload hand motion are procedural (`OperatorRig.cs`), not Mixamo clips.
+- **First-person arms:** the operator's own arms, cut from the same Blender body by `finalize_arms` in `ArtSource/Blender/operator_build.py`, and posed in code (`FirstPersonArms.cs`).
+- **Weapon and impact effects:** every effect texture (muzzle flash front and side, smoke, glow, debris chips, tracer, bullet-hole atlas with normal and mask maps) is drawn from seeded noise by `ArtSource/FX/fx_textures.py`. Shell casings are lathed in code from millimetre profiles (`ShellCasings.cs`). No effect textures, flipbooks or decals come from other sources.
 
 ## CC0 (public domain) assets
 

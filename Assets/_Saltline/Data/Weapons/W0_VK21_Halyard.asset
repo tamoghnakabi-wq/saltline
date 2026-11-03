@@ -102,6 +102,6 @@ MonoBehaviour:
   muzzleFlashScale: 1
   fireSoundId: ar
   soundRange: 120
-  viewmodelOffset: {x: 0.19, y: -0.2, z: 0.4}
+  viewmodelOffset: {x: 0.19, y: -0.165, z: 0.37}
   adsViewmodelOffset: {x: 0, y: -0.083, z: 0.2}
   adsEyeRelief: 0.18

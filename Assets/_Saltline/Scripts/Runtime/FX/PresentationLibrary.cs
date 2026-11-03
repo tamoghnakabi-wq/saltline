@@ -23,6 +23,22 @@ namespace Saltline.FX
         public Material operatorTeamRed;
         public Material operatorTeamBlue;
         public Material operatorTeamNeutral;
+        [Tooltip("First-person arms (P_OperatorArms with FirstPersonArms). Null = the gun floats on its own. Set by CharacterArtFactory.")]
+        public GameObject armsPrefab;
+        public Material armsTeamRed;
+        public Material armsTeamBlue;
+        public Material armsTeamNeutral;
+
+        [Header("Effects (set by FxArtFactory; null = plain fallbacks)")]
+        public Material fxFlash;      // muzzle flash, front view (2x2 flipbook, additive)
+        public Material fxFlame;      // muzzle flash, side jet on a cross mesh (2x2 flipbook, additive)
+        public Material fxSpark;      // sparks (additive, HDR)
+        public Material fxGlow;       // impact flashes (additive, soft)
+        public Material fxSmoke;      // smoke and dust (2x2 flipbook, lit, soft)
+        public Material fxDebris;     // chips (2x2 flipbook, lit, cutout)
+        public Material bulletHole;   // 2x2 decal atlas: concrete, metal, wood, soft ground
+        public Material brass;
+        public Material shellHull;
 
         static PresentationLibrary s_Instance;
         public static PresentationLibrary Instance

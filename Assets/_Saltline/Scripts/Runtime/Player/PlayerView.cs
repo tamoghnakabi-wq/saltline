@@ -26,6 +26,9 @@ namespace Saltline.Player
         Team m_TeamFor = (Team)255;
         bool m_FirstPersonHidden;
         public Transform WorldMuzzle { get; private set; }
+        public Transform WorldEject { get; private set; }
+        WeaponAction m_LastAction;
+        float m_LastProgress;
         public bool HasCharacter => m_Op != null;
 
         static readonly HitCapsule[] s_Caps = new HitCapsule[HitboxModel.Count];
@@ -86,6 +89,12 @@ namespace Saltline.Player
 
             var w = m_P.Weapons.Get(r.WeaponId);
             if (w != null && w.id != m_GunFor) BuildGun(w);
+            // Pump and bolt actions throw the spent case as the action opens (the first-person view does its own).
+            if (alive && !hide && w != null && r.Action == WeaponAction.Cycling && r.ActionProgress >= 0.4f
+                && (m_LastAction != WeaponAction.Cycling || m_LastProgress < 0.4f) && FxManager.Instance != null)
+                FxManager.Instance.EjectShell(WorldEject, w.weaponClass, r.Velocity, false);
+            m_LastAction = r.Action;
+            m_LastProgress = r.ActionProgress;
             if (!alive) return;
             if (m_Op != null) return;   // the rig poses the body and the gun after its animator
 
@@ -113,9 +122,21 @@ namespace Saltline.Player
             if (m_Gun != null) Destroy(m_Gun.gameObject);
             m_Gun = WeaponModel.Build(w.weaponClass, m_Root, gameObject.layer == Layers.LocalBody ? Layers.LocalBody : Layers.Default, WeaponView.ThirdPerson, out var muzzle, out _, out var gunRig);
             WorldMuzzle = muzzle;
+            WorldEject = FindChild(m_Gun, "Eject");
             m_GunFor = w.id;
             if (m_Op != null) m_Op.SetWeapon(m_Gun, gunRig, w.weaponClass);
             if (m_FirstPersonHidden) SetShadowsOnly(true);
+        }
+
+        static Transform FindChild(Transform t, string name)
+        {
+            if (t.name == name) return t;
+            for (int i = 0; i < t.childCount; i++)
+            {
+                var f = FindChild(t.GetChild(i), name);
+                if (f != null) return f;
+            }
+            return null;
         }
 
         void ApplyTeam(Team team)

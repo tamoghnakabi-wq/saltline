@@ -56,6 +56,57 @@ Hit detection never uses these bones. The host tests the analytic `HitboxModel` 
 - the visual eye height against the hitbox eye height;
 - the clip speed against the ground speed.
 
+## First-person arms
+
+The local player sees the operator's own arms. `finalize_arms` in `ArtSource/Blender/operator_build.py` builds
+the same body, keeps only the faces skinned mostly to the arm bones, bakes their textures (`T_OPA_D/_N/_M`) and
+exports `Art/Characters/Arms/SK_OperatorArms.fbx` with the full skeleton. `CharacterArtFactory` imports it without
+an Animator and makes `P_OperatorArms`. `ViewmodelController` spawns one on the viewmodel layer and, every frame
+after placing the gun, calls `FirstPersonArms.Pose`:
+- the bones go back to the bind pose;
+- each shoulder joint is moved to an anchor chosen per weapon, below and behind its grips and outside the
+  viewmodel camera's view, so the cut at the shoulder never shows and the elbows stay bent;
+- each hand is placed by its middle knuckle and its axes (which way the fingers point, which way the knuckles
+  run), worked out from the gun's markers as a wrap around what it holds; the shared two-bone IK (`ArmChain`,
+  also used by `OperatorRig`) then reaches the wrist;
+- what the support hand holds was measured on each model around `Grip_L` (the preview tool logs the outlines,
+  found with raycasts): the rifle's handguard, the sniper's forend and the shotgun's pump are wrapped as round
+  sections of their own radius and centre, with the palm underneath, the fingers up the right side and the thumb
+  along the left side; the SMG's forward magazine is held like a vertical grip; on the pistol the support hand
+  wraps over the firing hand;
+- the fingers curl about axes measured from the bind pose (palms down) by angles that wrap them around that
+  shape; the right index finger is bent until its tip reaches the trigger blade (further while the trigger is
+  held); each thumb is turned until its tip lies on a line along the gun (the left side of the handguard, or
+  forwards along the pistol's frame);
+- in a magazine reload the support hand goes to the magazine, down out of view while the old one falls, and
+  comes back holding the new one (it follows `WeaponRig`'s magazine as it is inserted);
+- a shell reload takes the support hand off the pump and down to the shells during the lead-in, then for each
+  shell up to the loading port, a short push into the tube, and back down (`WeaponState.ShellInserting` tells the
+  arms which phase they are in);
+- the support hand rides the shotgun's pump; the right hand lifts and pulls the rifle's bolt;
+- the reload path is eased in the viewmodel camera's space (so the hand keeps up while the player runs or turns),
+  and entering or leaving a reload, including a cancelled one, blends over 0.1 to 0.2 s.
+
+The arms take the team colour on their accent material.
+
+Review tools:
+- `Saltline.EditorTools.ArmsPreview.Render` (batch mode, about 10 s) renders every weapon with the arms in each
+  pose from the eye and from two outside angles into `arms_<weapon>.png`, and logs the wrists, knuckles and
+  fingertips in gun space. `-hipShift x,y,z` tries another hip position for every weapon without editing the data.
+- `-maptour Kappa -weapons` renders each weapon in the built game at the hip, aimed, in two reload phases and
+  (pump and bolt) mid-cycle, and logs each wrist's distance from its IK target.
+
+`FirstPersonArmsTests` checks the IK, the prefab, and that on every weapon both hands reach their grips (hip, aimed
+and mid-reload) and both shoulder cuts stay outside the view.
+
+The hip positions (`viewmodelOffset`) were raised by 3.5 cm and brought 3 cm closer after the arms went in, so the
+support hand and more of the receiver show at the bottom right of the screen.
+
+During a reload the first-person gun no longer drops out of view: it rises 7 cm, moves in towards the centre and
+cants left side up (`ViewmodelController.ReloadShift` / `ReloadTilt`), so the magazine well, the new magazine and the
+support hand stay on screen. A magazine reload eases into that pose and back out with its progress; a shell reload
+holds it through the lead-in and every shell and eases out over about 0.2 s when it ends or is cancelled.
+
 ## Mixamo clips (not in the repository)
 
 The clips are from Adobe Mixamo. They may be used in the game, but the files may not be redistributed. They are
@@ -82,6 +133,12 @@ The controller uses the idle, locomotion, crouch, `jump_loop` and the first five
 
 - No ground-adaptive foot IK: on stairs and slopes the feet follow the clip, not the ground. The leg IK is used only for the body-height correction.
 - While moving, the clips lean forward, so the visual head is 2–10 cm lower than the hitbox head (inside its 12.5 cm radius).
-- The bolt-action rifle's bolt cycles, but the right hand stays on the grip.
+- In third person the bolt-action rifle's bolt cycles, but the right hand stays on the grip (the first-person arms do work the bolt).
 - Remote players' weapon parts animate from the replicated action and progress. There is no per-shot blowback in third person.
-- The local player has no first-person arms yet. The first-person view shows only the weapon.
+- The first-person arms are posed procedurally, not from authored clips: reload and cycling motions are simple keyed paths, and there is no inspect, melee or wall-lean motion.
+- The empty-reload charging handle moves on its own; no hand pulls it.
+- No shell is drawn in the support hand during a shell reload, and no magazine in it on the way down to the
+  pouch: only the new magazine (which `WeaponRig` shows below the gun) is held.
+- The fingers wrap simple shapes (a round section, a box) with fixed curls, measured once per weapon class; there is
+  no per-finger collision, so a finger can sink a few millimetres into the gun or float above it. The trigger
+  finger stops a few millimetres short of the blade on some weapons.

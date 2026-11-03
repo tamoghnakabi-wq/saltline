@@ -94,7 +94,7 @@ namespace Saltline.EditorTools
                 w.hipSpread = 2.0f; w.adsSpread = 0.12f; w.moveSpread = 1.4f; w.airSpread = 4f; w.bloomPerShot = 0.12f; w.maxBloom = 1.2f; w.bloomRecovery = 5f;
                 w.recoilPattern = Pattern(30, 0.55f, 0.8f, 0.09f); w.recoilRandomYaw = 0.12f; w.recoilAdsMultiplier = 0.75f;
                 w.viewKickBack = 0.04f; w.viewKickUp = 2.2f; w.viewKickRoll = 1.4f; w.cameraShake = 0.2f;
-                w.fireSoundId = "ar"; w.viewmodelOffset = new Vector3(0.19f, -0.2f, 0.40f); w.adsEyeRelief = 0.18f;
+                w.fireSoundId = "ar"; w.viewmodelOffset = new Vector3(0.19f, -0.165f, 0.37f); w.adsEyeRelief = 0.18f;
             });
             var smg = Weapon("W1_SMR9_Wasp", reset, w =>
             {
@@ -108,7 +108,7 @@ namespace Saltline.EditorTools
                 w.hipSpread = 1.6f; w.adsSpread = 0.4f; w.moveSpread = 0.8f; w.airSpread = 3f; w.bloomPerShot = 0.15f; w.maxBloom = 1.8f; w.bloomRecovery = 7f;
                 w.recoilPattern = Pattern(32, 0.38f, 0.5f, 0.16f); w.recoilRandomYaw = 0.22f;
                 w.viewKickBack = 0.03f; w.viewKickUp = 1.6f; w.viewKickRoll = 1.8f; w.cameraShake = 0.15f;
-                w.fireSoundId = "smg"; w.viewmodelOffset = new Vector3(0.18f, -0.19f, 0.38f); w.adsEyeRelief = 0.17f;
+                w.fireSoundId = "smg"; w.viewmodelOffset = new Vector3(0.18f, -0.155f, 0.35f); w.adsEyeRelief = 0.17f;
             });
             var shotgun = Weapon("W2_TS12_Breaker", reset, w =>
             {
@@ -122,7 +122,7 @@ namespace Saltline.EditorTools
                 w.hipSpread = 4.5f; w.adsSpread = 3.2f; w.moveSpread = 0.5f; w.airSpread = 1f; w.bloomPerShot = 0f; w.maxBloom = 0f;
                 w.recoilPattern = new[] { new Vector2(0.2f, 3.5f) }; w.recoilRandomYaw = 0.6f; w.recoilRecoverySpeed = 7f; w.recoilRecoveryFraction = 0.7f;
                 w.viewKickBack = 0.09f; w.viewKickUp = 7f; w.viewKickRoll = 3f; w.cameraShake = 0.6f; w.muzzleFlashScale = 1.5f;
-                w.fireSoundId = "shotgun"; w.viewmodelOffset = new Vector3(0.2f, -0.2f, 0.36f); w.adsEyeRelief = 0.16f;
+                w.fireSoundId = "shotgun"; w.viewmodelOffset = new Vector3(0.2f, -0.165f, 0.33f); w.adsEyeRelief = 0.16f;
             });
             var sniper = Weapon("W3_LR338_Longreach", reset, w =>
             {
@@ -137,7 +137,7 @@ namespace Saltline.EditorTools
                 w.hipSpread = 7f; w.adsSpread = 0f; w.moveSpread = 3f; w.airSpread = 10f; w.crouchSpreadMultiplier = 0.6f; w.bloomPerShot = 0f; w.maxBloom = 0f;
                 w.recoilPattern = new[] { new Vector2(0.3f, 2.5f) }; w.recoilRandomYaw = 0.4f; w.recoilRecoverySpeed = 6f; w.recoilRecoveryFraction = 0.85f;
                 w.viewKickBack = 0.1f; w.viewKickUp = 6f; w.viewKickRoll = 2f; w.cameraShake = 0.5f; w.tracerSpeed = 700f; w.muzzleFlashScale = 1.3f;
-                w.fireSoundId = "sniper"; w.soundRange = 220f; w.viewmodelOffset = new Vector3(0.2f, -0.21f, 0.40f); w.adsEyeRelief = 0.09f;
+                w.fireSoundId = "sniper"; w.soundRange = 220f; w.viewmodelOffset = new Vector3(0.2f, -0.175f, 0.37f); w.adsEyeRelief = 0.09f;
             });
             var pistol = Weapon("W4_P45_Brace", reset, w =>
             {
@@ -151,7 +151,7 @@ namespace Saltline.EditorTools
                 w.hipSpread = 1.4f; w.adsSpread = 0.25f; w.moveSpread = 0.9f; w.airSpread = 3f; w.bloomPerShot = 0.3f; w.maxBloom = 1.5f; w.bloomRecovery = 6f;
                 w.recoilPattern = new[] { new Vector2(0.05f, 1.4f) }; w.recoilRandomYaw = 0.25f;
                 w.viewKickBack = 0.05f; w.viewKickUp = 4f; w.viewKickRoll = 2f; w.cameraShake = 0.2f;
-                w.fireSoundId = "pistol"; w.viewmodelOffset = new Vector3(0.16f, -0.16f, 0.36f); w.adsEyeRelief = 0.26f;
+                w.fireSoundId = "pistol"; w.viewmodelOffset = new Vector3(0.16f, -0.125f, 0.33f); w.adsEyeRelief = 0.26f;
             });
 
             var db = LoadOrCreate<WeaponDatabase>(DataDir + "/WeaponDatabase.asset");
@@ -204,6 +204,7 @@ namespace Saltline.EditorTools
             lib.tracer = Unlit("Tracer", new Color(4f, 2.6f, 1.2f, 1f), null, additive: true);
             lib.muzzleFlash = Unlit("MuzzleFlash", new Color(3f, 2f, 0.9f, 1f), radial, additive: true);
             lib.impact = Unlit("Impact", new Color(0.05f, 0.05f, 0.05f, 0.85f), radial, additive: false);
+            FxArtFactory.Build(lib);
             WeaponArtFactory.Build(lib);
             CharacterArtFactory.Build(lib);
             EditorUtility.SetDirty(lib);

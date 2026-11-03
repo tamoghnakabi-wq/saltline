@@ -73,6 +73,6 @@ MonoBehaviour:
   muzzleFlashScale: 1.5
   fireSoundId: shotgun
   soundRange: 120
-  viewmodelOffset: {x: 0.2, y: -0.2, z: 0.36}
+  viewmodelOffset: {x: 0.2, y: -0.165, z: 0.33}
   adsViewmodelOffset: {x: 0, y: -0.07, z: 0.22}
   adsEyeRelief: 0.16

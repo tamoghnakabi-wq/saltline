@@ -33,6 +33,15 @@ namespace Saltline.FX
         public float magDropForward = 0.2f;
 
         Part m_Mag, m_Bolt, m_Charge, m_Trigger, m_Pump, m_Slide;
+
+        /// <summary>The magazine part (null when the model has none); the first-person support hand follows it in reloads.</summary>
+        public Transform Mag => m_Mag.t;
+        /// <summary>The trigger blade (the first-person trigger finger rests on it).</summary>
+        public Transform Trigger => m_Trigger.t;
+        /// <summary>The bolt part (bolt-action rifle: the right hand works its handle).</summary>
+        public Transform Bolt => m_Bolt.t;
+        /// <summary>How far the pump has moved from rest, in world space (the support hand rides it).</summary>
+        public Vector3 PumpShift => m_Pump.Valid ? m_Pump.t.parent.TransformVector(m_Pump.t.localPosition - m_Pump.pos) : Vector3.zero;
         float m_SinceShot = 10f;
         float m_Cycle = 0.1f;
 
