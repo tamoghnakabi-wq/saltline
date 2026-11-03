@@ -44,8 +44,8 @@ namespace Saltline.UI
 
             // ---- left column: brand, navigation, callsign
             var left = root.Put(Ui.Div("menu-left", "col"));
+            left.Put(Ui.Div("logo-mark")).name = "logoMark";
             left.Add(Ui.Text("SALTLINE", "logo"));
-            left.Add(Ui.Div("logo-bar"));
             left.Add(Ui.Text("4 V 4   TEAM DEATHMATCH", "logo-sub"));
 
             var nav = left.Put(Ui.Div("menu-nav", "col"));

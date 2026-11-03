@@ -275,14 +275,20 @@
     border-right-width: 1px;
     border-color: var(--line);
 }
+.logo-mark {
+    width: 81px;
+    height: 96px;
+    margin: 0 0 20px 0;
+    background-image: url("project://database/Assets/_Saltline/Art/Branding/SaltlineMark.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
 .logo {
-    font-size: 92px;
-    letter-spacing: 14px;
+    font-size: 78px;
+    letter-spacing: 11px;
     color: var(--text);
     -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Black.ttf");
 }
-.logo-bar { width: 72px; height: 4px; background-color: var(--accent); margin: 10px 0 14px 4px; }
-.logo-sub { font-size: 16px; letter-spacing: 6px; color: var(--text-dim); margin-left: 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
+.logo-sub { font-size: 16px; letter-spacing: 6px; color: var(--text-dim); margin: 8px 0 0 4px; -unity-font-definition: url("project://database/Assets/_Saltline/Art/Fonts/Roboto-Bold.ttf"); }
 .menu-nav { margin-top: 56px; margin-right: 64px; }
 .menu-callsign { margin-top: 40px; margin-right: 88px; }
 .menu-footer { font-size: 13px; letter-spacing: 1px; color: var(--text-faint); }

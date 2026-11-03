@@ -10,7 +10,7 @@ namespace Saltline.Core
         public const string GameName = "SALTLINE";
 
         /// <summary>Semantic game version shown in menus, release names and the update check.</summary>
-        public const string Version = "0.1.0";
+        public const string Version = "0.1.1";
         public const int NetProtocol = 4; // 3: match flow (MatchDirector on the session object); 4: ShotFx.PelletHits
 
         /// <summary>

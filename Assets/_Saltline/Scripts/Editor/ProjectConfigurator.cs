@@ -52,6 +52,7 @@ namespace Saltline.EditorTools
             PlayerSettings.enableFrameTimingStats = true;
             PlayerSettings.stripEngineCode = false;
 
+            Branding.Apply();
             AssetDatabase.SaveAssets();
             Debug.Log($"[SALTLINE] Project configured: {Product} {PlayerSettings.bundleVersion}");
         }

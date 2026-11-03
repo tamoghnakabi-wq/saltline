@@ -6,6 +6,8 @@ No assets were taken from commercial games.
 ## Made for this project
 
 - **Code:** all C# under `Assets/_Saltline/Scripts`, and the tools under `Tools/` and `ArtSource/`.
+- **Logo and app icon:** the SALTLINE S mark, drawn by `ArtSource/Branding/make_logo.py` (app icon sizes, the
+  menu logo and the website's icons).
 - **Kappa Saltworks map:** modelled in Blender from `ArtSource/Blender/kappa_build.py`.
 - **Kappa props:** containers, trucks, the salt harvester, bulk bags, pallets, IBC tanks, drums, lamps, windows,
   doors, shutters and the other set dressing, modelled from `ArtSource/Blender/kappa_props.py`.

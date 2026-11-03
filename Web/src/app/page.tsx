@@ -81,7 +81,8 @@ export default function Home() {
     <>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-ink/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
-          <a href="#top" className="text-lg font-black uppercase tracking-[0.2em]">
+          <a href="#top" className="flex items-center gap-3 text-lg font-black uppercase tracking-[0.2em]">
+            <img src="/logo-mark.svg" alt="" width={21} height={25} className="h-[25px] w-auto" />
             Saltline
           </a>
           <nav aria-label="Sections" className="hidden items-center gap-6 text-sm font-medium text-dim md:flex">
