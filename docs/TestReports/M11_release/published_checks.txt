@@ -1,0 +1,53 @@
+Checks of the published SALTLINE 0.1.0, 2026-11-04 (AEDT), MacBook Air M4, macOS 27.2
+
+## Files downloaded from https://github.com/tamoghnakabi-wq/saltline/releases/download/v0.1.0/ with curl
+SALTLINE-0.1.0-macOS-arm64.zip: OK
+SALTLINE-0.1.0-Windows-x64.zip: OK
+
+## https://saltline-five.vercel.app/version.json
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+{
+  "game": "SALTLINE",
+  "latest": "0.1.0",
+  "protocol": 4,
+  "minimumProtocol": 4,
+  "minimumVersion": "",
+  "released": "2026-11-03",
+  "download": "https://saltline-five.vercel.app/#download"
+}
+
+## Downloaded macOS app, update check with its built-in address (the live site)
+{
+  "role": "update",
+  "platform": "MacOS",
+  "protocol": "4",
+  "version": "0.1.0",
+  "netsim": "off",
+  "updateStatus": "UpToDate",
+  "updateLatest": "0.1.0",
+  "updateDownload": "https://saltline-five.vercel.app/#download",
+  "footer": "v0.1.0  ·  protocol 4  ·  MAC  ·  preparing shaders for this machine 88%",
+  "hostEnabled": "True",
+  "updatePanelShown": "False",
+  "result": "PASS"
+}
+
+## Same app, -updateurl pointing at a local file with minimumProtocol 5
+{
+  "role": "update",
+  "platform": "MacOS",
+  "protocol": "4",
+  "version": "0.1.0",
+  "netsim": "off",
+  "updateStatus": "UpdateRequired",
+  "updateLatest": "0.2.0",
+  "updateDownload": "https://saltline-five.vercel.app/#download",
+  "footer": "v0.1.0  ·  protocol 4  ·  MAC  ·  update required",
+  "hostEnabled": "False",
+  "updatePanelShown": "True",
+  "hostRefused": "This version (0.1.0) can no longer play online. Download SALTLINE 0.2.0 to keep playing.",
+  "browseRefused": "True",
+  "joinRefused": "True",
+  "result": "PASS"
+}
