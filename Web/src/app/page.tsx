@@ -224,7 +224,7 @@ export default function Home() {
         <Section id="download" eyebrow="Download" title="Get the game">
           <Downloads />
           <div className="grid gap-5 lg:grid-cols-2">
-            <div className="card flex flex-col gap-4 p-6">
+            <div className="card flex min-w-0 flex-col gap-4 p-6">
               <h3 className="text-lg font-bold">Install on a Mac</h3>
               <ol className="flex list-decimal flex-col gap-2 pl-5 leading-relaxed text-dim marker:text-faint">
                 <li>Open the downloaded zip, then drag SALTLINE to your Applications folder.</li>
@@ -243,7 +243,7 @@ export default function Home() {
               </p>
               <code className="code block overflow-x-auto whitespace-pre">xattr -dr com.apple.quarantine /Applications/SALTLINE.app</code>
             </div>
-            <div className="card flex flex-col gap-4 p-6">
+            <div className="card flex min-w-0 flex-col gap-4 p-6">
               <h3 className="text-lg font-bold">Install on Windows</h3>
               <ol className="flex list-decimal flex-col gap-2 pl-5 leading-relaxed text-dim marker:text-faint">
                 <li>Right-click the downloaded zip, choose Extract All, and open the extracted folder.</li>
